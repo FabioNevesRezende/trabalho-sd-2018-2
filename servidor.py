@@ -67,6 +67,7 @@ def criaItem(chave, valor):
 
 def loga(msg):
     logs.write(msg)
+    logs.flush() # garante a escrita no arquivo sem ter que fechá-lo
     printa_positivo(msg + ' logada com sucesso')
     
 
@@ -140,18 +141,23 @@ def main():
     s = iniciaServidor()
     
     fio1 = Thread(target=escutaConexoes, args=(s,))
+    fio1.daemon = True
     fio1.start()  # inicia thread que escuta por novas conexoes
 
     fio2 = Thread(target=trataComandosFilaF1, args=())
+    fio2.daemon = True
     fio2.start()  # inicia thread que trata elementos da fila F1
     
     fio3 = Thread(target=trataComandosFilaF2, args=())
+    fio3.daemon = True
     fio3.start()  # inicia thread que trata elementos da fila F2
     
     fio4 = Thread(target=trataComandosFilaF3, args=())
+    fio4.daemon = True
     fio4.start()  # inicia thread que trata elementos da fila F3
 
     escutaComandos() # na thread principal, escuta comandos vindos do(s) cliente(s) e os adiciona na Fila F1
+    
 
 
 if __name__ == '__main__':
