@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from comum import *
-import sqlite3
 import datetime
+import io
 
 itensMapa = [] # lista de elementos <bigInteger, string>
 conexoes = [] # lista de conexões 
@@ -12,25 +12,38 @@ filaF1 = Fila() # fila F1 especificada nos requisitos
 filaF2 = Fila() # fila F2 especificada nos requisitos
 filaF3 = Fila() # fila F3 especificada nos requisitos
 
-connDb = sqlite3.connect('servidor.db')
+try:
+    logs = open('logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
+except FileNotFoundError:
+    logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
+    
+
+def criaItensMapaLogs():
+    try:
+        for linha in logs.readlines():
+            comando = linha.split(' ')[0]
+            chave = int(linha.split(' ')[1])
+            if comando == comandos['create']:
+                itensMapa.append(ItemMapa(chave, linha.split(' ')[2]))
+            if comando == comandos['update']:
+                pass
+            if comando == comandos['delete']:
+                pass #
+            # não precisa implementar o read nesta leitura inicial já que ele não altera o estado do mapa de itens
+    except io.UnsupportedOperation: # se não conseguir ler as linhas significa que o arquivo está aberto em modo de escrita apenas "w"
+        printa_neutro('Não há nenhum log a ser lido')
+        
 
 # Analisa configuração inicial 
 def parsaConfigIni():
 
     printa_neutro('Vai ler arquivo de inicialização')
 
-    cursor = connDb.cursor()
-    cursor.execute('create table if not exists logs (comando text, horario text)')
-    cursor.execute('create table if not exists itens (chave text, valor text)')
-
     # recupera o estado, se houver
-    cursor.execute('select chave, valor from itens')
-    for row in cursor:
-        itensMapa.append(ItemMapa(int(row[0]), row[1]))
+    criaItensMapaLogs()
 
     printa_positivo('Terminada a leitura de arquivo de inicialização, estado atual da lista de itens: ')
     printaItens()
-    connDb.close()
 
 # printa todos os itens
 def printaItens():
@@ -45,25 +58,15 @@ def temItem(chave):
 
 # cria um novo item e o adiciona à lista
 def criaItem(chave, valor):
-    global connDb
 
     if not temItem(chave):
         itensMapa.append(ItemMapa(chave, valor))
-        cursor = connDb.cursor()
-        cursor.execute("insert into itens(chave, valor) values (?,?)", (chave,valor))
         msg = 'Novo item ' + valor + ' criado com sucesso com ID: ' + str(chave)
         printa_positivo(msg)
-        connDb.commit()
-        connDb.close()
         return msg
 
 def loga(msg):
-    global connDb
-    
-    cursor = connDb.cursor()
-    cursor.execute("insert into logs(comando, horario) values (?,?)", (msg,str(datetime.datetime.now())))
-    connDb.commit()
-    connDb.close()
+    logs.write(msg)
     printa_positivo(msg + ' logada com sucesso')
     
 
@@ -80,7 +83,7 @@ def trataComandosFilaF2():
     while online:
         while filaF2.tamanho() > 0:
             cmd, addr = filaF2.desenfileira()
-            loga(cmd)
+            loga(cmd + '\n')
             
 # Thread que pega os comandos e os executa
 def trataComandosFilaF3():
@@ -110,6 +113,7 @@ def escutaComandos():
 
         except KeyboardInterrupt as interrput:
             printa_negativo('Encerrando aplicação =(')
+            logs.close()
             online = False
 
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
@@ -154,6 +158,7 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
+        logs.close()
         printa_negativo('Erro ao rodar servidor: ')
         printa_negativo(str(e))
         traceback.print_exc()

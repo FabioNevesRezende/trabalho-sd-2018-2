@@ -134,18 +134,12 @@ class ItemMapa():
         self.valor = valor
 
     def __setattr__(self, name, value):
-        # Verifica se a chave é um Inteiro (Portanto, um BigInteger em python já que suporta grandes números)
+        # Verifica se a chave é um Inteiro
         if name == 'chave' and not isinstance(value, int): 
             raise TypeError('Chave do item deve ser um Inteiro')
         # Verifica se o valor é uma string
         if name == 'valor' and not isinstance(value, str):
             raise TypeError('Valor do item deve ser uma String')
-        # Verifica se a chave não tem mais que 20 bytes
-        if name == 'chave' and value > 2**(8*20):
-            raise TypeError('Chave do item não deve ter mais que 20 bytes')
-        # Verifica se o valor não tem mais do que 3010 caracteres
-        if name == 'valor' and len(value) > 3010:
-            raise TypeError('Valor do item deve ser uma String de até 3010 caracteres')
         super().__setattr__(name, value)
 
     # Serializa o item em uma string
