@@ -17,22 +17,28 @@ try:
 except FileNotFoundError:
     logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
     
-
+'''
+Recria itens em memória
+'''
 def criaItensMapaLogs():
     try:
         for linha in logs.readlines():
-            comando = linha.split(' ')[0]
-            chave = int(linha.split(' ')[1])
-            if comando == comandos['create']:
-                itensMapa.append(ItemMapa(chave, linha.split(' ')[2]))
-            if comando == comandos['update']:
-                pass
-            if comando == comandos['delete']:
-                pass #
-            # não precisa implementar o read nesta leitura inicial já que ele não altera o estado do mapa de itens
+            executaComandos(linha)
     except io.UnsupportedOperation: # se não conseguir ler as linhas significa que o arquivo está aberto em modo de escrita apenas "w"
         printa_neutro('Não há nenhum log a ser lido')
-        
+
+#Função para executar os métodos em memória
+def executaComandos(cmd, msg=""):
+    comando = cmd.split(' ')[0]
+    chave = int(cmd.split(' ')[1])
+    valor = cmd.split(' ')[2]
+    if comando == comandos['create']:
+        return criaItem(chave, valor, msg)
+    if comando == comandos['update']:
+        print('vai atualizar item')
+        return atualizaItem(chave, valor,msg)
+    if comando == comandos['delete']:
+        pass 
 
 # Analisa configuração inicial 
 def parsaConfigIni():
@@ -49,26 +55,45 @@ def parsaConfigIni():
 def printaItens():
     for item in itensMapa:
         item.printa()
-
+'''
+@param: chave: Chave do item
+Verifica se o item existe no "banco"
+'''
 def temItem(chave):
     for elem in itensMapa:
         if elem.chave == chave:
-            return True
-    return False
+            return itensMapa.index(elem)
+    return 
 
 # cria um novo item e o adiciona à lista
-def criaItem(chave, valor):
-
-    if not temItem(chave):
+def criaItem(chave, valor, msg=""):
+    if  temItem(chave)==None:
         itensMapa.append(ItemMapa(chave, valor))
         msg = 'Novo item ' + valor + ' criado com sucesso com ID: ' + str(chave)
         printa_positivo(msg)
-        return msg
+        return True
+    else:
+        msg = 'A chave: '+ str(chave) + ' já existe no banco!!!'
+        printa_negativo(msg)
+        return False
+
+#Atualiza um item, caso exista
+def atualizaItem(chave,valor, msg=""):
+    index = temItem(chave)
+    if not index==None:
+        itensMapa[index] = ItemMapa(chave,valor)
+        printa_positivo(msg)
+        return True
+    else:
+        msg = "A chave " + str(chave) +" não existe no banco"
+        printa_negativo(msg)
+        return False
 
 def loga(msg):
     logs.write(msg)
     logs.flush() # garante a escrita no arquivo sem ter que fechá-lo
     printa_positivo(msg + ' logada com sucesso')
+    # printaItens()
     
 
 # Thread que pega os comandos recem chegados do cliente e despacha para as filas F2 e F3
@@ -89,14 +114,17 @@ def trataComandosFilaF2():
 # Thread que pega os comandos e os executa
 def trataComandosFilaF3():
     while online:
+        msg = ""
         while filaF3.tamanho() > 0:
             cmd, addr = filaF3.desenfileira()
+            executaComandos(cmd, msg)
+            print('Lista atual:')
+            printaItens()
             
             
 # Função que escuta comandos dos clientes (executado na Thread principal)
 def escutaComandos():
     global online
-
     while online:
         try:
             for conn, addr in conexoes: # para cada conexão
@@ -104,14 +132,12 @@ def escutaComandos():
                 if not data: continue
                 recebido = str(data.decode())
                 printa_positivo('Recebeu "' + recebido + '" de: ' + str(addr))
-
                 # se os 4 primeiros caracteres do que foi recebido for um dos 4 comandos CRUD aceitos no vetor "comandos"...
                 if recebido[:4] == comandos['create'] or recebido[:4] == comandos['read'] or recebido[:4] == comandos['update'] or recebido[:4] == comandos['delete']:
                     filaF1.enfileira((recebido, addr))
                     conn.send(('Recebi de você: ' + recebido).encode())
                 else:
                     printa_negativo('Recebido comando inválido de ' + str(addr))
-
         except KeyboardInterrupt as interrput:
             printa_negativo('Encerrando aplicação =(')
             logs.close()
@@ -168,22 +194,3 @@ if __name__ == '__main__':
         printa_negativo('Erro ao rodar servidor: ')
         printa_negativo(str(e))
         traceback.print_exc()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -62,7 +62,11 @@ def conversaUsuario(s):
         elif opcao[:4].lower() == 'read':
             pass
         elif opcao[:7].lower() == 'update ':
-            pass
+            limpaConsole()
+            msg = str(comandos['update'] + opcao[6:]).encode()
+            s.send(msg)
+            time.sleep(0.1)
+            esperaContinua()
         elif opcao[:7].lower() == 'delete ':
             rodando = False
         elif opcao[:4].lower() == 'sair':
