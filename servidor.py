@@ -6,11 +6,11 @@ import datetime
 import io
 
 itensMapa = [] # lista de elementos <bigInteger, string>
-conexoes = [] # lista de conexões 
-online = True # status do servidor online/offline
-filaF1 = Fila() # fila F1 especificada nos requisitos
-filaF2 = Fila() # fila F2 especificada nos requisitos
-filaF3 = Fila() # fila F3 especificada nos requisitos
+conexoes  = [] # lista de conexões 
+online    = True # status do servidor online/offline
+filaF1    = Fila() # fila F1 especificada nos requisitos
+filaF2    = Fila() # fila F2 especificada nos requisitos
+filaF3    = Fila() # fila F3 especificada nos requisitos
 
 try:
     logs = open('logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
@@ -30,24 +30,22 @@ def criaItensMapaLogs():
 #Função para executar os métodos em memória
 def executaComandos(cmd, msg=[""]):
     comando = cmd.split(' ')[0]
-    chave = int(cmd.split(' ')[1])
-    valor = cmd.split(' ')[2]
+    chave   = int(cmd.split(' ')[1])
+    valor   = cmd.split(' ')[2]
     if comando == comandos['create']:
         return criaItem(chave, valor, msg)
     if comando == comandos['update']:
-        print('vai atualizar item')
         return atualizaItem(chave, valor,msg)
     if comando == comandos['delete']:
+        pass 
+    if comando == comandos['read']:
         pass 
 
 # Analisa configuração inicial 
 def parsaConfigIni():
-
     printa_neutro('Vai ler arquivo de inicialização')
-
     # recupera o estado, se houver
     criaItensMapaLogs()
-
     printa_positivo('Terminada a leitura de arquivo de inicialização, estado atual da lista de itens: ')
     printaItens()
 
@@ -55,6 +53,7 @@ def parsaConfigIni():
 def printaItens():
     for item in itensMapa:
         item.printa()
+
 '''
 @param: chave: Chave do item
 Verifica se o item existe no "banco"
@@ -85,7 +84,7 @@ def atualizaItem(chave,valor, msg=[""]):
         printa_positivo(msg)
         return True
     else:
-        msg = "A chave " + str(chave) +" não existe no banco"
+        msg = "A chave " + str(chave) + " não existe no banco"
         printa_negativo(msg)
         return False
 
@@ -108,7 +107,7 @@ def trataComandosFilaF1():
 def trataComandosFilaF2():
     while online:
         while filaF2.tamanho() > 0:
-            cmd, addr = filaF2.desenfileira()
+            cmd, _addr = filaF2.desenfileira()
             loga(cmd + '\n')
             
 # Thread que pega os comandos e os executa
@@ -116,9 +115,9 @@ def trataComandosFilaF3():
     while online:
         msg = [""] #Cria uma lista com apenas um elemento que será a mensagem retonada da execução dos comandos
         while filaF3.tamanho() > 0:
-            cmd, addr = filaF3.desenfileira()            
+            cmd, _addr = filaF3.desenfileira()            
             executaComandos(cmd, msg)
-            print(msg[0])
+            # print(msg[0])
             print('Lista atual:')
             printaItens()
             
@@ -139,7 +138,7 @@ def escutaComandos():
                     conn.send(('Recebi de você: ' + recebido).encode())
                 else:
                     printa_negativo('Recebido comando inválido de ' + str(addr))
-        except KeyboardInterrupt as interrput:
+        except KeyboardInterrupt:
             printa_negativo('Encerrando aplicação =(')
             logs.close()
             online = False
@@ -185,8 +184,6 @@ def main():
 
     escutaComandos() # na thread principal, escuta comandos vindos do(s) cliente(s) e os adiciona na Fila F1
     
-
-
 if __name__ == '__main__':
     try:
         main()

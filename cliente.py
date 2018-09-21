@@ -9,12 +9,12 @@ rodando = True
 # printa o menu principal em stdout
 def printaMenuPrincipal():
     printa_positivo('Bem vindo. Digite uma das opções:')
-    printa_neutro(' Create <valor> para criar um item no mapa')
-    printa_neutro(' Read para receber todos os itens do mapa')
-    printa_neutro(' Read <chave> para receber um item pela sua chave')
-    printa_neutro(' Update <chave> <valor> para alterar um item no mapa')
-    printa_neutro(' Delete <chave> para remover um item pela sua chave')
-    printa_neutro(' Sair, para sair')
+    printa_neutro(' CREATE <chave> <valor> para criar um item no mapa')
+    printa_neutro(' READ para receber todos os itens do mapa')
+    printa_neutro(' READ <chave> para receber um item pela sua chave')
+    printa_neutro(' UPDATE <chave> <valor> para alterar um item no mapa')
+    printa_neutro(' DELELE <chave> para remover um item pela sua chave')
+    printa_neutro(' SAIR, para sair')
     printa_colorido(' > ', 'green')
 
 
@@ -27,7 +27,7 @@ def pegaInput():
 # esta função serve apenas para pausar a execução
 def esperaContinua():
     printa_neutro('Pressione ENTER para continuar')
-    nada = pegaInput()
+    _nada = pegaInput()
 
 # limpa o console
 def limpaConsole():
@@ -56,7 +56,7 @@ def conversaUsuario(s):
         if opcao[:7].lower() == 'create ':
             limpaConsole()
             msg = str(comandos['create'] + opcao[6:]).encode()
-            s.send( msg)
+            s.send(msg)
             time.sleep(0.1)
             esperaContinua()
         elif opcao[:4].lower() == 'read':
@@ -76,7 +76,6 @@ def conversaUsuario(s):
             printa_negativo('Opção Inválida')
             esperaContinua()
 
-
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((IP_SOCKET, PORTA_SOCKET))
@@ -89,11 +88,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-

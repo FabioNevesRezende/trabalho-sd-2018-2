@@ -92,8 +92,8 @@ enquanto o mesmo estiver executando.
 Todas as portas usadas na comunicação são especificadas
 via arquivos de configuração.
 
-
 '''
+
 from termcolor import colored
 import sys
 import time
@@ -185,10 +185,3 @@ class Fila:
     def printaFila(self):
         for elem in self.fila:
             print(str(elem))
-
-
-
-
-
-
-
