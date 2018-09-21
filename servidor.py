@@ -28,18 +28,23 @@ def criaItensMapaLogs():
         printa_neutro('Não há nenhum log a ser lido')
 
 #Função para executar os métodos em memória
-def executaComandos(cmd, msg=[""]):
-    comando = cmd.split(' ')[0]
-    chave   = int(cmd.split(' ')[1])
-    valor   = cmd.split(' ')[2]
+def executaComandos(cmd, conn=None, msg=[""]):
+    comando = cmd.strip().split(' ')[0]
+    chave   = ''
+
+    try:
+        chave = int(cmd.split(' ')[1])
+    except IndexError:
+        return leTodosItens(conn, msg)
+
     if comando == comandos['create']:
-        return criaItem(chave, valor, msg)
+        return criaItem(chave, cmd.strip().split(' ')[2], msg)
     if comando == comandos['update']:
-        return atualizaItem(chave, valor,msg)
+        return atualizaItem(chave, cmd.strip().split(' ')[2], msg)
     if comando == comandos['delete']:
-        pass 
+        return removeItem(chave, msg) 
     if comando == comandos['read']:
-        pass 
+        return leItem(chave, conn, msg)
 
 # Analisa configuração inicial 
 def parsaConfigIni():
@@ -64,11 +69,11 @@ def temItem(chave):
             return itensMapa.index(elem)
     return 
 
-# cria um novo item e o adiciona à lista
+# Cria um novo item e o adiciona à lista
 def criaItem(chave, valor, msg=[""]):
     if  temItem(chave)==None:
         itensMapa.append(ItemMapa(chave, valor))
-        msg[0] = 'Novo item ' + valor + ' criado com sucesso com ID: ' + str(chave)
+        msg[0] = 'Novo item ' + valor + ' criado com sucesso com chave: ' + str(chave)
         printa_positivo(msg[0])
         return True
     else:
@@ -76,16 +81,62 @@ def criaItem(chave, valor, msg=[""]):
         printa_negativo(msg[0])
         return False
 
-#Atualiza um item, caso exista
-def atualizaItem(chave,valor, msg=[""]):
+# Atualiza um item, caso exista
+def atualizaItem(chave, valor, msg=[""]):
     index = temItem(chave)
     if not index==None:
         itensMapa[index] = ItemMapa(chave,valor)
-        printa_positivo(msg)
+        msg[0] = "Item com chave: " + str(chave) + " atualizado com sucesso!"
+        printa_positivo(msg[0])
         return True
     else:
-        msg = "A chave " + str(chave) + " não existe no banco"
-        printa_negativo(msg)
+        msg[0] = "A chave: " + str(chave) + " não existe no banco!"
+        printa_negativo(msg[0])
+        return False
+
+# Remove um item, caso exista
+def removeItem(chave, msg=[""]):
+    index = temItem(chave)
+    if not index==None:
+        del itensMapa[index]
+        msg[0] = "Item com chave: " + str(chave) + " removido com sucesso!"
+        printa_positivo(msg[0])
+        printaItens()
+        return True
+    else:
+        msg[0] = "A chave: " + str(chave) + " não existe no banco!"
+        printa_negativo(msg[0])
+        return False
+
+# Lê um item e o retorna a conexão, caso exista
+def leItem(chave, conn=None, msg=[""]):
+    index = temItem(chave)
+    if not index==None:
+        msg[0] = str(itensMapa[index].serializa())
+        printa_positivo(msg[0])
+        if conn:
+            conn.send(msg[0].encode())
+        return True
+    else:
+        msg[0] = "A chave: " + str(chave) + " não existe no banco!"
+        printa_negativo(msg[0])
+        if conn:
+            conn.send(msg[0].encode())
+        return False
+
+# Lê um item e o retorna a conexão, caso exista
+def leTodosItens(conn=None, msg=[""]):
+    if len(itensMapa) > 0:
+        msg[0] = str([p.serializa() for p in itensMapa])
+        printa_positivo(msg[0])
+        if conn:
+            conn.send(msg[0].encode())
+        return True
+    else:
+        msg[0] = "Não há resgistros no banco!"
+        printa_negativo(msg[0])
+        if conn:
+            conn.send(msg[0].encode())
         return False
 
 def loga(msg):
@@ -99,15 +150,15 @@ def loga(msg):
 def trataComandosFilaF1():
     while online:
         while filaF1.tamanho() > 0:
-            cmd, addr = filaF1.desenfileira()
-            filaF2.enfileira((cmd, addr))
-            filaF3.enfileira((cmd, addr))
+            cmd, conn, _addr = filaF1.desenfileira()
+            filaF2.enfileira(cmd)
+            filaF3.enfileira((cmd, conn))
             
 # Thread que pega os comandos e os loga
 def trataComandosFilaF2():
     while online:
         while filaF2.tamanho() > 0:
-            cmd, _addr = filaF2.desenfileira()
+            cmd = filaF2.desenfileira()
             loga(cmd + '\n')
             
 # Thread que pega os comandos e os executa
@@ -115,13 +166,18 @@ def trataComandosFilaF3():
     while online:
         msg = [""] #Cria uma lista com apenas um elemento que será a mensagem retonada da execução dos comandos
         while filaF3.tamanho() > 0:
-            cmd, _addr = filaF3.desenfileira()            
-            executaComandos(cmd, msg)
+            cmd, conn = filaF3.desenfileira()            
+            executaComandos(cmd, conn, msg)
             # print(msg[0])
             print('Lista atual:')
             printaItens()
             
-            
+def encerraServidor():
+    global online
+    printa_negativo('Encerrando aplicação =(')
+    logs.close()
+    online = False
+
 # Função que escuta comandos dos clientes (executado na Thread principal)
 def escutaComandos():
     global online
@@ -141,10 +197,8 @@ def escutaComandos():
                     raise KeyboardInterrupt
                 else:
                     printa_negativo('Recebido comando inválido de ' + str(addr))
-        except KeyboardInterrupt:
-            printa_negativo('Encerrando aplicação =(')
-            logs.close()
-            online = False
+        except (KeyboardInterrupt, ConnectionResetError):
+            encerraServidor()
 
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
 def iniciaServidor():

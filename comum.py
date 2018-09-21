@@ -108,22 +108,22 @@ TAMANHO_MAXIMO_PACOTE = 3134 # 3Kb tamanho máximo do dado enviado a cada vez
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
-    sys.stdout.write(colored(strng, cor))
+    sys.stdout.write(colored(str(strng), cor))
 
 # printa uma mensagem de sucesso com a cor verde
 def printa_positivo(mensagem):
     printa_colorido('[+] ', 'green')
-    sys.stdout.write(mensagem + '\n')
+    sys.stdout.write(str(mensagem) + '\n')
 
 # printa uma mensagem de falha/erro com a cor vermelho
 def printa_negativo(mensagem):
     printa_colorido('[-] ', 'red')
-    sys.stdout.write(mensagem + '\n')
+    sys.stdout.write(str(mensagem) + '\n')
 
 # printa uma mensagem azul
 def printa_neutro(mensagem):
     printa_colorido('[*] ', 'blue')
-    sys.stdout.write(mensagem + '\n')
+    sys.stdout.write(str(mensagem) + '\n')
 
 comandos = { 'create' : 'CREA', 'read' : 'READ', 'update' : 'UPDT', 'delete' : 'DELT', 'die': 'DIE'}
 
@@ -144,7 +144,7 @@ class ItemMapa():
 
     # Serializa o item em uma string
     def serializa(self):
-        return 'chave:{0},valor:{1}'.format(self.chave, self.valor)
+        return 'Chave: {0}, Valor: {1}'.format(self.chave, self.valor)
 
     # Desserializa uma string em um ItemMapa
     @staticmethod

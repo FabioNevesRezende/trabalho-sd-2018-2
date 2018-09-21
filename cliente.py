@@ -40,9 +40,16 @@ def recebeRespostaCmd(s):
         try:
             data = s.recv(TAMANHO_MAXIMO_PACOTE)
             if not data: continue
-            printa_positivo(data.decode())
+            printa_neutro(data.decode())
         except:
             pass
+
+def trataComando(socket, cmd, opcao=""):
+    limpaConsole()
+    msg = str(cmd + opcao).encode()
+    socket.send(msg)
+    time.sleep(0.1)
+    esperaContinua()
 
 def conversaUsuario(s):
     global rodando
@@ -53,25 +60,17 @@ def conversaUsuario(s):
         opcao = pegaInput()
 
         if len(opcao) == 0: continue
-        if opcao[:7].lower() == 'create ':
-            limpaConsole()
-            msg = str(comandos['create'] + opcao[6:]).encode()
-            s.send(msg)
-            time.sleep(0.1)
-            esperaContinua()
+        if opcao[:6].lower() == 'create':
+            trataComando(s, comandos['create'], opcao[6:])
         elif opcao[:4].lower() == 'read':
-            pass
-        elif opcao[:7].lower() == 'update ':
-            limpaConsole()
-            msg = str(comandos['update'] + opcao[6:]).encode()
-            s.send(msg)
-            time.sleep(0.1)
-            esperaContinua()
-        elif opcao[:7].lower() == 'delete ':
-            rodando = False
+            trataComando(s, comandos['read'], opcao[4:])
+        elif opcao[:6].lower() == 'update':
+            trataComando(s, comandos['update'], opcao[6:])
+        elif opcao[:6].lower() == 'delete':
+            trataComando(s, comandos['delete'], opcao[6:])
         elif opcao[:4].lower() == 'sair':
-            rodando = False
             s.send(comandos['die'].encode())
+            rodando = False
         else:
             limpaConsole()
             printa_negativo('Opção Inválida')
