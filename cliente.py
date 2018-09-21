@@ -4,7 +4,7 @@
 from comum import *
 import random
 
-rodando = True
+rodando   = True
 
 # printa o menu principal em stdout
 def printaMenuPrincipal():
@@ -71,6 +71,7 @@ def conversaUsuario(s):
             rodando = False
         elif opcao[:4].lower() == 'sair':
             rodando = False
+            s.send(comandos['die'].encode())
         else:
             limpaConsole()
             printa_negativo('Opção Inválida')

@@ -125,7 +125,7 @@ def printa_neutro(mensagem):
     printa_colorido('[*] ', 'blue')
     sys.stdout.write(mensagem + '\n')
 
-comandos = { 'create' : 'CREA', 'read' : 'READ', 'update' : 'UPDT', 'delete' : 'DELT'}
+comandos = { 'create' : 'CREA', 'read' : 'READ', 'update' : 'UPDT', 'delete' : 'DELT', 'die': 'DIE'}
 
 # Define uma dupla {chave-valor}
 class ItemMapa():
