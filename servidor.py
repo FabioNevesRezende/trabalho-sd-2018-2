@@ -169,6 +169,7 @@ def trataComandosFilaF3():
             cmd, conn = filaF3.desenfileira()            
             executaComandos(cmd, conn, msg)
             # print(msg[0])
+            conn.send(('Retorno: ' + msg[0]).encode())
             print('Lista atual:')
             printaItens()
             
