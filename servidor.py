@@ -28,7 +28,7 @@ def criaItensMapaLogs():
         printa_neutro('Não há nenhum log a ser lido')
 
 #Função para executar os métodos em memória
-def executaComandos(cmd, msg=""):
+def executaComandos(cmd, msg=[""]):
     comando = cmd.split(' ')[0]
     chave = int(cmd.split(' ')[1])
     valor = cmd.split(' ')[2]
@@ -66,19 +66,19 @@ def temItem(chave):
     return 
 
 # cria um novo item e o adiciona à lista
-def criaItem(chave, valor, msg=""):
+def criaItem(chave, valor, msg=[""]):
     if  temItem(chave)==None:
         itensMapa.append(ItemMapa(chave, valor))
-        msg = 'Novo item ' + valor + ' criado com sucesso com ID: ' + str(chave)
-        printa_positivo(msg)
+        msg[0] = 'Novo item ' + valor + ' criado com sucesso com ID: ' + str(chave)
+        printa_positivo(msg[0])
         return True
     else:
-        msg = 'A chave: '+ str(chave) + ' já existe no banco!!!'
-        printa_negativo(msg)
+        msg[0] = 'A chave: '+ str(chave) + ' já existe no banco!!!'
+        printa_negativo(msg[0])
         return False
 
 #Atualiza um item, caso exista
-def atualizaItem(chave,valor, msg=""):
+def atualizaItem(chave,valor, msg=[""]):
     index = temItem(chave)
     if not index==None:
         itensMapa[index] = ItemMapa(chave,valor)
@@ -114,10 +114,11 @@ def trataComandosFilaF2():
 # Thread que pega os comandos e os executa
 def trataComandosFilaF3():
     while online:
-        msg = ""
+        msg = [""] #Cria uma lista com apenas um elemento que será a mensagem retonada da execução dos comandos
         while filaF3.tamanho() > 0:
-            cmd, addr = filaF3.desenfileira()
+            cmd, addr = filaF3.desenfileira()            
             executaComandos(cmd, msg)
+            print(msg[0])
             print('Lista atual:')
             printaItens()
             
