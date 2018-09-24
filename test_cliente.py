@@ -15,13 +15,17 @@ class TestCliente:
     self.client.sendline('create 1 cecilia')
     assert 0 == self.client.expect(r'[^N]Ok') # match somente Ok, e não NOk
     
-  def test_read_existing_item(self):
+  def test_read_new_item(self):
     self.client.sendline('read 1')
-    assert 0 == self.client.expect(r'[^N]Ok')
+    assert 0 == self.client.expect(r'[^N]Ok - Item: Chave: 1, Valor: cecilia')
 
   def test_update_existing_item(self):
     self.client.sendline('update 1 gloria')
     assert 0 == self.client.expect(r'[^N]Ok')
+
+  def test_read_updated_item(self):
+    self.client.sendline('read 1')
+    assert 0 == self.client.expect(r'[^N]Ok - Item: Chave: 1, Valor: gloria')
 
   def test_delete_existing_item(self):
     self.client.sendline('delete 1')
