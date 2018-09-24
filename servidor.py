@@ -77,7 +77,7 @@ def criaItem(chave, valor, msg=[""]):
         printa_positivo(msg[0])
         return True
     else:
-        msg[0] = 'Nok - Chave existente.'
+        msg[0] = 'NOk - Chave existente.'
         printa_negativo(msg[0])
         return False
 
@@ -90,7 +90,7 @@ def atualizaItem(chave, valor, msg=[""]):
         printa_positivo(msg[0])
         return True
     else:
-        msg[0] = 'Nok - Chave inexistente.'
+        msg[0] = 'NOk - Chave inexistente.'
         printa_negativo(msg[0])
         return False
 
@@ -104,7 +104,7 @@ def removeItem(chave, msg=[""]):
         printaItens()
         return True
     else:
-        msg[0] = 'Nok - Chave inexistente.'
+        msg[0] = 'NOk - Chave inexistente.'
         printa_negativo(msg[0])
         return False
 
@@ -116,18 +116,18 @@ def leItem(chave, msg=[""]):
         printa_positivo(msg[0])
         return True
     else:
-        msg[0] = 'Nok - Chave inexistente.'
+        msg[0] = 'NOk - Chave inexistente.'
         printa_negativo(msg[0])
         return False
 
 # Lê um item e o retorna a conexão, caso exista
 def leTodosItens(msg=[""]):
     if len(itensMapa) > 0:
-        msg[0] = str('Ok - Itens: ' + [p.serializa() for p in itensMapa])
+        msg[0] = 'Ok - Itens: ' + str([p.serializa() for p in itensMapa])
         printa_positivo(msg[0])
         return True
     else:
-        msg[0] = 'Nok - Banco vazio.'
+        msg[0] = 'NOk - Banco vazio.'
         printa_negativo(msg[0])
         return False
 
