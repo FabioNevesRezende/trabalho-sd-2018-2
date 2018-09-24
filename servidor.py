@@ -57,7 +57,7 @@ def parsaConfigIni():
 # printa todos os itens
 def printaItens():
     for item in itensMapa:
-        item.printa()
+        printa_neutro(item.serializa())
 
 '''
 @param: chave: Chave do item
@@ -135,7 +135,6 @@ def loga(msg):
     logs.write(msg)
     logs.flush() # garante a escrita no arquivo sem ter que fechá-lo
     printa_positivo(msg + ' logada com sucesso')
-    # printaItens()
     
 # Thread que pega os comandos recem chegados do cliente e despacha para as filas F2 e F3
 def trataComandosFilaF1():

@@ -3,6 +3,7 @@
 
 from comum import *
 import random
+import re
 
 rodando   = True
 
@@ -16,7 +17,6 @@ def printaMenuPrincipal():
     printa_neutro(' DELELE <chave> para remover um item pela sua chave')
     printa_neutro(' SAIR, para sair')
     printa_colorido(' > ', 'green')
-
 
 # pega o input do teclado
 def pegaInput():
@@ -40,9 +40,15 @@ def recebeRespostaCmd(s):
         try:
             data = s.recv(TAMANHO_MAXIMO_PACOTE)
             if not data: continue
-            printa_neutro(data.decode())
+            trataRetorno(data.decode())
         except:
             pass
+
+def trataRetorno(msg):
+    if re.match(r'Ok', msg) == None:
+        printa_negativo(msg)
+    else:
+        printa_positivo(msg)
 
 def trataComando(socket, cmd, opcao=""):
     limpaConsole()
@@ -80,6 +86,7 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((IP_SOCKET, PORTA_SOCKET))
     s.setblocking(0)
+    
     fio1 = Thread(target=conversaUsuario, args=(s, ))
     fio1.start()
 

@@ -154,11 +154,6 @@ class ItemMapa():
         valor = split[1][6:]
         return ItemMapa(int(chave),valor)
 
-    # Printa o item
-    def printa(self):
-        printa_neutro('Item chave: ' + str(self.chave))
-        printa_neutro('Item valor: ' + self.valor)
-
 # Esta classe Fila não é de nossa autoria
 # pegamos pronto de https://www.pythoncentral.io/use-queue-beginners-guide/
 class Fila:
