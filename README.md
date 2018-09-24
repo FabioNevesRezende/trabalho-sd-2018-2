@@ -1,5 +1,6 @@
 ## Informações Gerais
-A aplicação roda em Python3, não foi testada em Python2
+A aplicação roda em Python3, não foi testada em Python2.
+
 Todos os requisitos do professor estão nos comentários do arquivo common.py segundo slides
 
 # Instalação
