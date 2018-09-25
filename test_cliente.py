@@ -31,3 +31,21 @@ class TestCliente:
     self.client.sendline('delete 1')
     assert 0 == self.client.expect(r'[^N]Ok')
     
+  '''
+    Testes CRUD NOK
+  '''  
+  def test_create_new_item_nok(self):
+    self.client.sendline('create 2 bruno')
+    assert 0 == self.client.expect(r'[^N]Ok') 
+    
+  def test_create2_new_item_nok(self):
+    self.client.sendline('create 2 bruno')
+    assert 0 == self.client.expect(r'[^N]NOk - Chave existente')
+
+  def test_read_new_item_nok(self):
+    self.client.sendline('read 3')
+    assert 0 == self.client.expect(r'[^N]NOk - Chave inexistente')
+
+  def test_update_new_item_nok(self):
+    self.client.sendline('update 3 joao')
+    assert 0 == self.client.expect(r'[^N]NOk - Chave inexistente')    
