@@ -38,14 +38,18 @@ class TestCliente:
     self.client.sendline('create 2 bruno')
     assert 0 == self.client.expect(r'[^N]Ok') 
     
-  def test_create2_new_item_nok(self):
+  def test_create_non_existing_item_nok(self):
     self.client.sendline('create 2 bruno')
-    assert 0 == self.client.expect(r'[^N]NOk - Chave existente')
+    assert 0 == self.client.expect(r'NOk - Chave existente')
 
-  def test_read_new_item_nok(self):
+  def test_read_non_existing_item_nok(self):
     self.client.sendline('read 3')
-    assert 0 == self.client.expect(r'[^N]NOk - Chave inexistente')
+    assert 0 == self.client.expect(r'NOk - Chave inexistente')
 
-  def test_update_new_item_nok(self):
+  def test_update_non_existing_item_nok(self):
     self.client.sendline('update 3 joao')
-    assert 0 == self.client.expect(r'[^N]NOk - Chave inexistente')    
+    assert 0 == self.client.expect(r'NOk - Chave inexistente')    
+  
+  def test_delete_non_existing_item(self):
+    self.client.sendline('delete 3')
+    assert 0 == self.client.expect(r'NOk - Chave inexistente')    
