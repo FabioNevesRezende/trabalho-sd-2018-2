@@ -101,10 +101,12 @@ import socket
 from threading import *
 import traceback
 import os
+import yaml
 
-IP_SOCKET = '127.0.0.1' # endereço IP que o servidor vai rodar
-PORTA_SOCKET = 8888 # porta que o servidor vai rodar
-TAMANHO_MAXIMO_PACOTE = 3134 # 3Kb tamanho máximo do dado enviado a cada vez
+configs               = yaml.load(open('configs.yml', 'r'))
+IP_SOCKET             = configs['IP_SOCKET']
+PORTA_SOCKET          = configs['PORTA_SOCKET']
+TAMANHO_MAXIMO_PACOTE = configs['TAMANHO_MAXIMO_PACOTE']
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
@@ -131,7 +133,7 @@ comandos = { 'create' : 'CREA', 'read' : 'READ', 'update' : 'UPDT', 'delete' : '
 class ItemMapa():
     def __init__(self, chave, valor):
         self.chave = chave
-        self.valor = valor
+        self.valor = valor.encode()
 
     def __setattr__(self, name, value):
         # Verifica se a chave é um Inteiro
@@ -144,7 +146,7 @@ class ItemMapa():
 
     # Serializa o item em uma string
     def serializa(self):
-        return 'Chave: {0}, Valor: {1}'.format(self.chave, self.valor)
+        return 'Chave: {0}, Valor: {1}'.format(self.chave, self.valor.decode())
 
     # Desserializa uma string em um ItemMapa
     @staticmethod
@@ -163,12 +165,12 @@ class Fila:
 
     # adiciona elemento na fila
     def enfileira(self,data):
-        self.fila.insert(0,data)
+        self.fila.insert(0, data)
         return True
 
     # remove um item da fila
     def desenfileira(self):
-        if len(self.fila)>0:
+        if len(self.fila) > 0:
             return self.fila.pop()
         return None
 

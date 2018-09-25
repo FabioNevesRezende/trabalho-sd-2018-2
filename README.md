@@ -10,6 +10,7 @@ Para rodar a aplicação, é necessário ter a biblioteca termcolor do python
 sudo -H pip3 install --upgrade pip
 sudo pip3 install termcolor
 sudo pip3 install pytest
+sudo pip3 install pyyaml
 ```
 
 ## Testes
