@@ -133,7 +133,7 @@ comandos = { 'create' : 'CREA', 'read' : 'READ', 'update' : 'UPDT', 'delete' : '
 class ItemMapa():
     def __init__(self, chave, valor):
         self.chave = chave
-        self.valor = valor
+        self.valor = valor.encode()
 
     def __setattr__(self, name, value):
         # Verifica se a chave é um Inteiro
@@ -146,7 +146,7 @@ class ItemMapa():
 
     # Serializa o item em uma string
     def serializa(self):
-        return 'Chave: {0}, Valor: {1}'.format(self.chave, self.valor)
+        return 'Chave: {0}, Valor: {1}'.format(self.chave, self.valor.decode())
 
     # Desserializa uma string em um ItemMapa
     @staticmethod
