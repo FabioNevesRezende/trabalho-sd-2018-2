@@ -9,7 +9,7 @@ class TestExecution:
     self.client.sendline() # simula ENTER depois de cada test
 
   '''
-    Teste interação
+    Teste iteração
   '''
   def test_execution(self):
       self.client.sendline('create 0 1\r\n')
