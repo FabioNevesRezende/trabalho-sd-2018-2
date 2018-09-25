@@ -140,8 +140,8 @@ class ItemMapa():
         if name == 'chave' and not isinstance(value, int): 
             raise TypeError('Chave do item deve ser um Inteiro')
         # Verifica se o valor é uma string
-        if name == 'valor' and not isinstance(value, str):
-            raise TypeError('Valor do item deve ser uma String')
+        if name == 'valor' and not isinstance(value, bytes):
+            raise TypeError('Valor do item deve ser um array de bytes')
         super().__setattr__(name, value)
 
     # Serializa o item em uma string

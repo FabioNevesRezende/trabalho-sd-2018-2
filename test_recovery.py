@@ -20,25 +20,26 @@ class TestRecovery:
         self.client.sendline()
         self.client.sendline()
     assert True
-'''
-Inicia o servidor e cliente
-'''
+  
+  '''
+  Inicia o servidor e cliente
+  '''
   @classmethod
   def test_startServer(self):
     self.server = pexpect.spawn('python3 servidor.py')
     self.client = pexpect.spawn('python3 cliente.py')
 
-'''
-Reinicia o servidor e cliente
-'''
+  '''
+  Reinicia o servidor e cliente
+  '''
   def test_RebootServer(self):
       self.server.kill(9)
       self.client.kill(9)
       self.test_startServer()
 
-'''
-Valida recuperação por log
-'''      
+  '''
+  Valida recuperação por log
+  '''      
   def test_readCommands(self):
       msg = r'[^N]Ok - Itens: ['
       for i in range(0, len(self.items)):

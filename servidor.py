@@ -48,7 +48,7 @@ def executaComandos(cmd, msg=[""]):
 
 # Analisa configuração inicial 
 def parsaConfigIni():
-    printa_neutro('Vai ler arquivo de inicialização')
+    printa_neutro('Lerá arquivo de inicialização')
     # recupera o estado, se houver
     criaItensMapaLogs()
     printa_positivo('Terminada a leitura de arquivo de inicialização, estado atual da lista de itens: ')
