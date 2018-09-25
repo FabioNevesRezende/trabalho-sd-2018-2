@@ -149,7 +149,8 @@ def trataComandosFilaF2():
     while online:
         while filaF2.tamanho() > 0:
             cmd = filaF2.desenfileira()
-            loga(cmd + '\n')
+            if cmd[:4] != comandos['read']:
+                loga(cmd + '\n')
             
 # Thread que pega os comandos e os executa
 def trataComandosFilaF3():
