@@ -15,4 +15,5 @@ printf "\n-- Teste de recuperação de estado --\n"
 # TODO
 
 printf "\n-- Teste de concorrência --\n"
-# TODO
+pytest test_concurrency.py -vv
+reset
