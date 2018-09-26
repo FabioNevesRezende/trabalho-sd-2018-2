@@ -12,7 +12,9 @@ pytest test_execution.py -vv
 reset
 
 printf "\n-- Teste de recuperação de estado --\n"
-# TODO
+rm logs.log
+pytest test_recovery.py -vv
+reset
 
 printf "\n-- Teste de concorrência --\n"
 pytest test_concurrency.py -vv
