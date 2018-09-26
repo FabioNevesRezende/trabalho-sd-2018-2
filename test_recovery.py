@@ -3,49 +3,54 @@ import pexpect
 class TestRecovery:
   @classmethod
   def setup_class(self):
-    # self.server = pexpect.spawn('python3 servidor.py')
-    # self.client = pexpect.spawn('python3 cliente.py')
-    self.test_startServer()
-    self.items = [1,2,3,4,5]
+    pexpect.spawn('rm logs.log')
+    self.items = [1, 2, 3, 4, 5]
+    self.offset = 0
+    # self.client.sendline()
 
-  def teardown_method(self):
-    self.client.sendline() # simula ENTER depois de cada test
+  # def teardown_method(self):
+    # self.client.sendline() # simula ENTER depois de cada test
 
-  '''
-    Teste interação
-  '''
   def test_Insert(self):
-    for i in range(0,len(self.items)):
-        self.client.sendline('create {} {}'.format(i,self.items[i]))
-        self.client.sendline()
-        self.client.sendline()
-    assert True
-  
+    self.startServer()
+    for idx, item in enumerate(self.items, self.offset):
+      self.client.sendline('\r\ncreate {} {}\r\n'.format(idx, item))
+      assert 0 == self.client.expect(r'[^N]Ok')
+
   '''
   Inicia o servidor e cliente
   '''
   @classmethod
-  def test_startServer(self):
+  def startServer(self):
     self.server = pexpect.spawn('python3 servidor.py')
     self.client = pexpect.spawn('python3 cliente.py')
 
   '''
   Reinicia o servidor e cliente
   '''
-  def test_RebootServer(self):
+  @classmethod
+  def rebootServer(self):
       self.server.kill(9)
       self.client.kill(9)
-      self.test_startServer()
 
   '''
   Valida recuperação por log
-  '''      
-  def test_readCommands(self):
-      msg = r'[^N]Ok - Itens: ['
-      for i in range(0, len(self.items)):
-          msg += '\'Chave: {}, Valor: {}\''
-          if i==len(self.items)-1:
-              msg += ']'
-          else:
-              msg += ', '
-      assert == self.client.expect(msg)   
+  '''
+  def test_recoveryData(self):
+    self.client.sendline('read')
+    assert 0 == self.client.expect(self.readCommands())
+    
+  def test_currentData(self):
+    self.items = [6,7,8,9,10]
+    self.offset = 5
+    self.test_Insert()
+    self.client.sendline('\r\nread')
+    assert 0 == self.client.expect(self.readCommands())
+
+  def readCommands(self):
+    if self.offset == 0:
+      return "Ok - Itens: \['Chave: 0, Valor: 1', 'Chave: 1, Valor: 2', 'Chave: 2, Valor: 3', 'Chave: 3, Valor: 4', 'Chave: 4, Valor: 5'\]"
+    else:
+      return "Ok - Itens: \['Chave: 0, Valor: 1', 'Chave: 1, Valor: 2', 'Chave: 2, Valor: 3', 'Chave: 3, Valor: 4', 'Chave: 4, Valor: 5', 'Chave: 5, Valor: 6', 'Chave: 6, Valor: 7', 'Chave: 7, Valor: 8', 'Chave: 8, Valor: 9', 'Chave: 9, Valor: 10'\]"
+
+# "Ok - Itens: \['Chave: 0, Valor: 1', 'Chave: 1, Valor: 2', 'Chave: 2, Valor: 3', 'Chave: 3, Valor: 4', 'Chave: 4, Valor: 5'\]"
