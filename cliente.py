@@ -5,7 +5,8 @@ from comum import *
 import random
 import re
 
-rodando   = True
+manterRecebeRespostaCmdVivo = True
+manterConversaUsuario = True
 
 # printa o menu principal em stdout
 def printaMenuPrincipal():
@@ -34,16 +35,14 @@ def limpaConsole():
     os.system('clear')
 
 def recebeRespostaCmd(s):
-    global rodando
-
-    while rodando:
+    while manterRecebeRespostaCmdVivo:
         try:
             data = s.recv(TAMANHO_MAXIMO_PACOTE)
             if not data: continue
             trataRetorno(data.decode())
         except:
             pass
-
+    
 def trataRetorno(msg):
     if re.match(r'Ok', msg) == None:
         printa_negativo(msg)
@@ -57,10 +56,22 @@ def trataComando(socket, cmd, opcao=""):
     time.sleep(0.1)
     esperaContinua()
 
-def conversaUsuario(s):
-    global rodando
+def encerraCliente(socket):
+    global manterRecebeRespostaCmdVivo
+    global manterConversaUsuario
 
-    while rodando:
+    printa_negativo('Encerrando aplicação =(')
+    manterConversaUsuario = False
+
+    if not manterConversaUsuario:
+        time.sleep(5)
+        manterRecebeRespostaCmdVivo = False
+        socket.close()
+
+def conversaUsuario(s):
+    global manterConversaUsuario
+
+    while manterConversaUsuario:
         limpaConsole()
         printaMenuPrincipal()
         opcao = pegaInput()
@@ -75,8 +86,7 @@ def conversaUsuario(s):
         elif opcao[:6].lower() == 'delete':
             trataComando(s, comandos['delete'], opcao[6:])
         elif opcao[:4].lower() == 'sair':
-            s.send(comandos['die'].encode())
-            rodando = False
+            encerraCliente(s)
         else:
             limpaConsole()
             printa_negativo('Opção Inválida')
@@ -86,7 +96,7 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((IP_SOCKET, PORTA_SOCKET))
     s.setblocking(0)
-    
+
     fio1 = Thread(target=conversaUsuario, args=(s, ))
     fio1.start()
 

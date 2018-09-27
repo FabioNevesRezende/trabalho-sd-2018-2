@@ -160,8 +160,8 @@ def trataComandosFilaF3():
             cmd, conn = filaF3.desenfileira()            
             executaComandos(cmd, msg)
             conn.send(msg[0].encode())
-            print('Lista atual:')
-            printaItens()
+            # print('Lista atual:')
+            # printaItens()
             
 def encerraServidor():
     global online
@@ -183,9 +183,6 @@ def escutaComandos():
                 if recebido[:4] == comandos['create'] or recebido[:4] == comandos['read'] or recebido[:4] == comandos['update'] or recebido[:4] == comandos['delete']:
                     filaF1.enfileira((recebido, conn, addr))
                     conn.send(('Recebi de você: ' + recebido).encode())
-                elif recebido[:4] == comandos['die']:
-                    time.sleep(5)
-                    raise KeyboardInterrupt
                 else:
                     printa_negativo('Recebido comando inválido de ' + str(addr))
         except (KeyboardInterrupt, ConnectionResetError):
