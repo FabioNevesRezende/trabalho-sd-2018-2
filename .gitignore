@@ -1,4 +1,4 @@
 __pycache__
 servidor.db
 logs.log
-.vscode/launch.json
+.vscode/*
