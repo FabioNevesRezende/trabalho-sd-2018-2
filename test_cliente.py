@@ -1,55 +1,75 @@
 import pexpect
+import random
 
 class TestCliente:
-  @classmethod
-  def setup_class(self):
-    self.client = pexpect.spawn('python3 cliente.py')
-
-  def teardown_method(self):
-    self.client.sendline() # simula ENTER depois de cada test
-
   '''
     Testes CRUD OK
   '''  
-  def test_create_new_item(self):
-    self.client.sendline('create 1 cecilia')
-    assert 0 == self.client.expect(r'[^N]Ok') # match somente Ok, e não NOk
+  def crud_ok(self, process_id = None):
+    client = pexpect.spawn('python3 cliente.py')
+
+    p_id    = 'value-ne'
+    rand_id = 0
+    regex   = r'[^N]Ok'
+
+    if process_id:
+      rand_id = random.randint(0, 999999999)
+      p_id    = process_id
+      
+    client.sendline('create {} old-{}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex) # match somente Ok, e não NOk
+
+    client.sendline('\nread {}'.format(rand_id))
+    assert 0 == client.expect(regex + ' - Item: Chave: {}, Valor: old-{}'.format(rand_id, p_id))
+
+    client.sendline('\nupdate {} new-{}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex)
     
-  def test_read_new_item(self):
-    self.client.sendline('read 1')
-    assert 0 == self.client.expect(r'[^N]Ok - Item: Chave: 1, Valor: cecilia')
+    client.sendline('\nread {}'.format(rand_id))
+    assert 0 == client.expect(regex + ' - Item: Chave: {}, Valor: new-{}'.format(rand_id, p_id))
 
-  def test_update_existing_item(self):
-    self.client.sendline('update 1 gloria')
-    assert 0 == self.client.expect(r'[^N]Ok')
+    client.sendline('\ndelete {}'.format(rand_id))
+    assert 0 == client.expect(r'[^N]Ok')
 
-  def test_read_updated_item(self):
-    self.client.sendline('read 1')
-    assert 0 == self.client.expect(r'[^N]Ok - Item: Chave: 1, Valor: gloria')
-
-  def test_delete_existing_item(self):
-    self.client.sendline('delete 1')
-    assert 0 == self.client.expect(r'[^N]Ok')
+    client.kill(9)
     
   '''
     Testes CRUD NOK
   '''  
-  def test_create_new_item_nok(self):
-    self.client.sendline('create 2 bruno')
-    assert 0 == self.client.expect(r'[^N]Ok') 
+  def crud_nok(self, process_id = None):
+    client = pexpect.spawn('python3 cliente.py')
+
+    p_id    = 'value-ne'
+    rand_id = 1
+    regex   = r'NOk'
+
+    if process_id:
+      rand_id = random.randint(0, 999999999)
+      p_id    = process_id
+
+    client.sendline('create {} {}'.format(rand_id, p_id))
+    assert 0 == client.expect(r'[^N]Ok') 
     
-  def test_create_non_existing_item_nok(self):
-    self.client.sendline('create 2 bruno')
-    assert 0 == self.client.expect(r'NOk - Chave existente')
+    client.sendline('\ncreate {} {}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex + ' - Chave existente')
 
-  def test_read_non_existing_item_nok(self):
-    self.client.sendline('read 3')
-    assert 0 == self.client.expect(r'NOk - Chave inexistente')
+    rand_id += 1
 
-  def test_update_non_existing_item_nok(self):
-    self.client.sendline('update 3 joao')
-    assert 0 == self.client.expect(r'NOk - Chave inexistente')    
+    client.sendline('\nread {}'.format(rand_id))
+    regex  += ' - Chave inexistente' 
+    assert 0 == client.expect(regex)
+
+    client.sendline('\nupdate {} {}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex)    
   
-  def test_delete_non_existing_item(self):
-    self.client.sendline('delete 3')
-    assert 0 == self.client.expect(r'NOk - Chave inexistente')    
+    client.sendline('\ndelete {}'.format(rand_id))
+    assert 0 == client.expect(regex)
+
+    client.kill(9)
+
+  def all(self, process_id = None):
+    self.crud_ok(process_id)
+    self.crud_nok(process_id)
+
+  def test_sequencitial(self):
+    self.all()
