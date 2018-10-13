@@ -94,6 +94,9 @@ via arquivos de configuração.
 
 '''
 
+import grpc
+import interface_pb2
+import interface_pb2_grpc
 from termcolor import colored
 import sys
 import time

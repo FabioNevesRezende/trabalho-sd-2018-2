@@ -2,13 +2,13 @@
 syntax = "proto3";
 
 message msgItem {
-    required int64 chave = 1;
-    optional string valor = 2; // opcional pois no caso do LeItem e DeletaItem, só tem que mandar o ID do item
+    int64 chave = 1;
+    string valor = 2; // opcional pois no caso do LeItem e DeletaItem, só tem que mandar o ID do item
 }
 
 message status {
-    required string resposta = 1; // apenas a string retornada para o cliente para ele printar o status
-    optional msgItem itemResposta = 2; // coloquei um item na resposta pois acho q pode precisar retornar pro cliente
+    string resposta = 1; // apenas a string retornada para o cliente para ele printar o status
+    msgItem itemResposta = 2; // coloquei um item na resposta pois acho q pode precisar retornar pro cliente
 }
 
 service ManipulaMapa {

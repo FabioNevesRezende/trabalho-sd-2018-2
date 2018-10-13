@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
+from concurrent import futures
 from comum import *
 import datetime
 import io
@@ -11,11 +13,39 @@ online    = True # status do servidor online/offline
 filaF1    = Fila() # fila F1 especificada nos requisitos
 filaF2    = Fila() # fila F2 especificada nos requisitos
 filaF3    = Fila() # fila F3 especificada nos requisitos
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 try:
     logs = open('logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
 except FileNotFoundError:
     logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
+    
+    
+class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
+    def CriaItem(self, request, context):
+        recebido = str(comandos['create'] + ' ' + str(request.chave) + ' ' + str(request.valor))
+        filaF1.enfileira(recebido)
+        #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
+        return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
+        
+    def LeItem(self, request, context):
+        recebido = str(comandos['read'] + ' ' + str(request.chave) + ' ' + str(request.valor))
+        filaF1.enfileira(recebido)
+        #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
+        return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
+        
+    def AtualizaItem(self, request, context):
+        recebido = str(comandos['update'] + ' ' + str(request.chave) + ' ' + str(request.valor))
+        filaF1.enfileira(recebido)
+        #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
+        return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
+        
+    def DeletaItem(self, request, context):
+        recebido = str(comandos['delete'] + ' ' + str(request.chave))
+        filaF1.enfileira(recebido)
+        #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
+        return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
+    
     
 '''
 Recria itens em memória
@@ -140,9 +170,9 @@ def loga(msg):
 def trataComandosFilaF1():
     while online:
         while filaF1.tamanho() > 0:
-            cmd, conn, _addr = filaF1.desenfileira()
+            cmd = filaF1.desenfileira()
             filaF2.enfileira(cmd)
-            filaF3.enfileira((cmd, conn))
+            filaF3.enfileira(cmd)
             
 # Thread que pega os comandos e os loga
 def trataComandosFilaF2():
@@ -157,9 +187,9 @@ def trataComandosFilaF3():
     while online:
         msg = [""] #Cria uma lista com apenas um elemento que será a mensagem retonada da execução dos comandos
         while filaF3.tamanho() > 0:
-            cmd, conn = filaF3.desenfileira()            
+            cmd = filaF3.desenfileira()            
             executaComandos(cmd, msg)
-            conn.send(msg[0].encode())
+            interface_pb2.status(resposta=msg[0].encode())
             # print('Lista atual:')
             # printaItens()
             
@@ -190,12 +220,24 @@ def escutaComandos():
 
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
 def iniciaServidor():
+    '''
     printa_positivo('Vai iniciar servidor TCP em ' + str(IP_SOCKET) + ':' + str(PORTA_SOCKET))
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # inicia servidor tcp
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # diz para reusar porta 
     s.bind((IP_SOCKET, PORTA_SOCKET)) # atrela socket à porta no SO
     s.listen(50)
     return s
+    '''
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    interface_pb2_grpc.add_ManipulaMapaServicer_to_server(GrpcInterface(), server)
+    server.add_insecure_port('[::]:' + str(PORTA_SOCKET))
+    server.start()
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
+        
 
 # loop infinito que escuta por novas conexoes e as adiciona no vetor "conexoes"
 def escutaConexoes(s):
@@ -209,12 +251,14 @@ def escutaConexoes(s):
 # Main e ponto de inicio da aplicação
 def main():
     parsaConfigIni()
-    s = iniciaServidor()
-    
+    iniciaServidor()
+    '''
     fio1 = Thread(target=escutaConexoes, args=(s,))
     fio1.daemon = True
     fio1.start()  # inicia thread que escuta por novas conexoes
-
+    '''
+    # esta thread pode ser removida já que o server.start() vai cuidar disto
+    
     fio2 = Thread(target=trataComandosFilaF1, args=())
     fio2.daemon = True
     fio2.start()  # inicia thread que trata elementos da fila F1
@@ -227,7 +271,8 @@ def main():
     fio4.daemon = True
     fio4.start()  # inicia thread que trata elementos da fila F3
 
-    escutaComandos() # na thread principal, escuta comandos vindos do(s) cliente(s) e os adiciona na Fila F1
+    # escutaComandos() # na thread principal, escuta comandos vindos do(s) cliente(s) e os adiciona na Fila F1
+    # esta thread também pode ser removida já que vai escutar os comandos pelo server.start() do grpc
     
 if __name__ == '__main__':
     try:
