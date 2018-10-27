@@ -127,8 +127,8 @@ def main():
         #response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
     #print("Greeter client received: " + response.message)
 
-    fio1 = Thread(target=conversaUsuario, args=(stub, ))
-    fio1.start()
+        fio1 = Thread(target=conversaUsuario, args=(stub, ))
+        fio1.start()
 
     #fio2 = Thread(target=recebeRespostaCmd, args=(stub, ))
     #fio2.start()
