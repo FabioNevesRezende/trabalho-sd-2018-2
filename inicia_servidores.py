@@ -9,7 +9,8 @@ from itertools import cycle
 CONFIGS = yaml.load(open('configs.yml', 'r'))
 
 def salva_servidores(servidores):
-    with open("servidores.txt", "+w") as file:
+    caminho = CONFIGS['SERVIDORES']
+    with open(caminho, "+w") as file:
         file.write("\n".join(map(str, servidores)))
 
 def tem_resto(a, b):
@@ -30,8 +31,17 @@ def calcula_faixas(m, n):
     return faixas
 
 def inicia_servidor(atual, ant, post):
-    comando = "{} -e '{} servidor.py {} {} {}' &".format(
-        CONFIGS['BASH'], CONFIGS['PYTHON'], atual, ant, post) # DETACHED
+    geometry = ''
+
+    if CONFIGS['BASH'].startswith('xfce'):
+        geometry = '--geometry 60x10'
+
+    comando_python = '{} servidor.py {} {} {}'.format(CONFIGS['PYTHON'], atual, 
+        ant, post)
+
+    comando = "{} -e '{}' {} &".format(CONFIGS['BASH'], comando_python, 
+        geometry) # DETACHED
+
     os.system(comando)
 
 def inicia_servidores(m, n):
@@ -47,8 +57,8 @@ def inicia_servidores(m, n):
         except IndexError:
             post = servidores[0]
 
-        print({'atual': atual, 'anterior': ant, 'posterior': post})
-        # inicia_servidor(atual, ant, post)
+        # print({'atual': atual, 'anterior': ant, 'posterior': post})
+        inicia_servidor(atual, ant, post)
 
 def main():
     parser = argparse.ArgumentParser()
