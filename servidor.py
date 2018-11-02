@@ -230,7 +230,7 @@ def iniciaServidor():
     '''
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     interface_pb2_grpc.add_ManipulaMapaServicer_to_server(GrpcInterface(), server)
-    server.add_insecure_port('localhost:' + str(PORTA_SOCKET))
+    server.add_insecure_port('[::]:' + str(PORTA_SOCKET))
     server.start()
     try:
         while True:

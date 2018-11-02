@@ -122,13 +122,13 @@ def main():
     s.setblocking(0)
     '''
     
-    with grpc.insecure_channel(str(IP_SOCKET) + ':' + str(PORTA_SOCKET)) as channel:
-        stub = interface_pb2_grpc.ManipulaMapaStub(channel)
+    channel = grpc.insecure_channel(str(IP_SOCKET) + ':' + str(PORTA_SOCKET))
+    stub = interface_pb2_grpc.ManipulaMapaStub(channel)
         #response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
     #print("Greeter client received: " + response.message)
 
-        fio1 = Thread(target=conversaUsuario, args=(stub, ))
-        fio1.start()
+    fio1 = Thread(target=conversaUsuario, args=(stub, ))
+    fio1.start()
 
     #fio2 = Thread(target=recebeRespostaCmd, args=(stub, ))
     #fio2.start()
