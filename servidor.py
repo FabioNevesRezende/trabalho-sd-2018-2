@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 from concurrent import futures
 from comum import *
 import datetime
 import io
 
-itensMapa = [] # lista de elementos <bigInteger, string>
-conexoes  = [] # lista de conexões 
 online    = True # status do servidor online/offline
-filaF1    = Fila() # fila F1 especificada nos requisitos
-filaF2    = Fila() # fila F2 especificada nos requisitos
-filaF3    = Fila() # fila F3 especificada nos requisitos
+
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 try:
@@ -22,231 +17,217 @@ except FileNotFoundError:
     
     
 class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
+    def __init__(self):
+        self.itensMapa = [] # lista de elementos <bigInteger, string>
+        self.filaF1    = Fila() # fila F1 especificada nos requisitos
+        self.filaF2    = Fila() # fila F2 especificada nos requisitos
+        self.filaF3    = Fila() # fila F3 especificada nos requisitos
+        self.parsaConfigIni()
+
+        fio2 = Thread(target=self.trataComandosFilaF1, args=())
+        fio2.daemon = True
+        fio2.start()  # inicia thread que trata elementos da fila F1
+        
+        fio3 = Thread(target=self.trataComandosFilaF2, args=())
+        fio3.daemon = True
+        fio3.start()  # inicia thread que trata elementos da fila F2
+        
+        fio4 = Thread(target=self.trataComandosFilaF3, args=())
+        fio4.daemon = True
+        fio4.start()  # inicia thread que trata elementos da fila F3
+        
+        super()
+
     def CriaItem(self, request, context):
         recebido = str(comandos['create'] + ' ' + str(request.chave) + ' ' + str(request.valor))
-        filaF1.enfileira(recebido)
+        self.filaF1.enfileira(recebido)
         #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
         return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
         
     def LeItem(self, request, context):
         recebido = str(comandos['read'] + ' ' + str(request.chave) + ' ' + str(request.valor))
-        filaF1.enfileira(recebido)
+        self.filaF1.enfileira(recebido)
         #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
         return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
         
     def AtualizaItem(self, request, context):
         recebido = str(comandos['update'] + ' ' + str(request.chave) + ' ' + str(request.valor))
-        filaF1.enfileira(recebido)
+        self.filaF1.enfileira(recebido)
         #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
         return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
         
     def DeletaItem(self, request, context):
         recebido = str(comandos['delete'] + ' ' + str(request.chave))
-        filaF1.enfileira(recebido)
+        self.filaF1.enfileira(recebido)
         #return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
         return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
-    
-    
-'''
-Recria itens em memória
-'''
-def criaItensMapaLogs():
-    try:
-        for linha in logs.readlines():
-            executaComandos(linha)
-    except io.UnsupportedOperation: # se não conseguir ler as linhas significa que o arquivo está aberto em modo de escrita apenas "w"
-        printa_neutro('Não há nenhum log a ser lido')
-
-#Função para executar os métodos em memória
-def executaComandos(cmd, msg=[""]):
-    comando = cmd.strip().split(' ')[0]
-    chave   = ''
-
-    try:
-        chave = int(cmd.split(' ')[1])
-    except IndexError:
-        return leTodosItens(msg)
-
-    if comando == comandos['create']:
-        return criaItem(chave, cmd.strip().split(' ')[2], msg)
-    if comando == comandos['update']:
-        return atualizaItem(chave, cmd.strip().split(' ')[2], msg)
-    if comando == comandos['delete']:
-        return removeItem(chave, msg) 
-    if comando == comandos['read']:
-        return leItem(chave, msg)
-
-# Analisa configuração inicial 
-def parsaConfigIni():
-    printa_neutro('Lerá arquivo de inicialização')
-    # recupera o estado, se houver
-    criaItensMapaLogs()
-    printa_positivo('Terminada a leitura de arquivo de inicialização, estado atual da lista de itens: ')
-    printaItens()
-
-# printa todos os itens
-def printaItens():
-    for item in itensMapa:
-        printa_neutro(item.serializa())
-
-'''
-@param: chave: Chave do item
-Verifica se o item existe no "banco"
-'''
-def temItem(chave):
-    for elem in itensMapa:
-        if elem.chave == chave:
-            return itensMapa.index(elem)
-    return 
-
-# Cria um novo item e o adiciona à lista
-def criaItem(chave, valor, msg=[""]):
-    if  temItem(chave)==None:
-        itensMapa.append(ItemMapa(chave, valor))
-        msg[0] = 'Ok - Item criado.'
-        printa_positivo(msg[0])
-        return True
-    else:
-        msg[0] = 'NOk - Chave existente.'
-        printa_negativo(msg[0])
-        return False
-
-# Atualiza um item, caso exista
-def atualizaItem(chave, valor, msg=[""]):
-    index = temItem(chave)
-    if not index==None:
-        itensMapa[index] = ItemMapa(chave,valor)
-        msg[0] = 'Ok - Item atualizado.'
-        printa_positivo(msg[0])
-        return True
-    else:
-        msg[0] = 'NOk - Chave inexistente.'
-        printa_negativo(msg[0])
-        return False
-
-# Remove um item, caso exista
-def removeItem(chave, msg=[""]):
-    index = temItem(chave)
-    if not index==None:
-        del itensMapa[index]
-        msg[0] = 'Ok - Item removido.'
-        printa_positivo(msg[0])
-        printaItens()
-        return True
-    else:
-        msg[0] = 'NOk - Chave inexistente.'
-        printa_negativo(msg[0])
-        return False
-
-# Lê um item e o retorna a conexão, caso exista
-def leItem(chave, msg=[""]):
-    index = temItem(chave)
-    if not index==None:
-        msg[0] = str('Ok - Item: ' + itensMapa[index].serializa())
-        printa_positivo(msg[0])
-        return True
-    else:
-        msg[0] = 'NOk - Chave inexistente.'
-        printa_negativo(msg[0])
-        return False
-
-# Lê um item e o retorna a conexão, caso exista
-def leTodosItens(msg=[""]):
-    if len(itensMapa) > 0:
-        msg[0] = 'Ok - Itens: ' + str([p.serializa() for p in itensMapa])
-        printa_positivo(msg[0])
-        return True
-    else:
-        msg[0] = 'NOk - Banco vazio.'
-        printa_negativo(msg[0])
-        return False
-
-def loga(msg):
-    logs.write(msg)
-    logs.flush() # garante a escrita no arquivo sem ter que fechá-lo
-    printa_positivo(msg + ' logada com sucesso')
-    
-# Thread que pega os comandos recem chegados do cliente e despacha para as filas F2 e F3
-def trataComandosFilaF1():
-    while online:
-        while filaF1.tamanho() > 0:
-            cmd = filaF1.desenfileira()
-            filaF2.enfileira(cmd)
-            filaF3.enfileira(cmd)
-            
-# Thread que pega os comandos e os loga
-def trataComandosFilaF2():
-    while online:
-        while filaF2.tamanho() > 0:
-            cmd = filaF2.desenfileira()
-            if cmd[:4] != comandos['read']:
-                loga(cmd + '\n')
-            
-# Thread que pega os comandos e os executa
-def trataComandosFilaF3():
-    while online:
-        msg = [""] #Cria uma lista com apenas um elemento que será a mensagem retonada da execução dos comandos
-        while filaF3.tamanho() > 0:
-            cmd = filaF3.desenfileira()            
-            executaComandos(cmd, msg)
-            interface_pb2.status(resposta=msg[0].encode())
-            # print('Lista atual:')
-            # printaItens()
-            
-def encerraServidor():
-    global online
-    printa_negativo('Encerrando aplicação =(')
-    logs.close()
-    online = False
-
-# Função que escuta comandos dos clientes (executado na Thread principal)
-def escutaComandos():
-    global online
-    while online:
+        
+    '''
+    Recria itens em memória
+    '''
+    def criaItensMapaLogs(self):
         try:
-            for conn, addr in conexoes: # para cada conexão
-                data = conn.recv(TAMANHO_MAXIMO_PACOTE)
-                if not data: continue
-                recebido = str(data.decode())
-                printa_positivo('Recebeu "' + recebido + '" de: ' + str(addr))
-                # se os 4 primeiros caracteres do que foi recebido for um dos 4 comandos CRUD aceitos no vetor "comandos"...
-                if recebido[:4] == comandos['create'] or recebido[:4] == comandos['read'] or recebido[:4] == comandos['update'] or recebido[:4] == comandos['delete']:
-                    filaF1.enfileira((recebido, conn, addr))
-                    conn.send(('Recebi de você: ' + recebido).encode())
-                else:
-                    printa_negativo('Recebido comando inválido de ' + str(addr))
-        except (KeyboardInterrupt, ConnectionResetError):
-            encerraServidor()
+            for linha in logs.readlines():
+                self.executaComandos(linha)
+        except io.UnsupportedOperation: # se não conseguir ler as linhas significa que o arquivo está aberto em modo de escrita apenas "w"
+            printa_neutro('Não há nenhum log a ser lido')
 
+    #Função para executar os métodos em memória
+    def executaComandos(self, cmd, msg=[""]):
+        comando = cmd.strip().split(' ')[0]
+        chave   = ''
+
+        try:
+            chave = int(cmd.split(' ')[1])
+        except IndexError:
+            return self.leTodosItens(msg)
+
+        if comando == comandos['create']:
+            return self.criaItem(chave, cmd.strip().split(' ')[2], msg)
+        if comando == comandos['update']:
+            return self.atualizaItem(chave, cmd.strip().split(' ')[2], msg)
+        if comando == comandos['delete']:
+            return self.removeItem(chave, msg) 
+        if comando == comandos['read']:
+            return self.leItem(chave, msg)
+
+    # Analisa configuração inicial 
+    def parsaConfigIni(self):
+        printa_neutro('Lerá arquivo de inicialização')
+        # recupera o estado, se houver
+        self.criaItensMapaLogs()
+        printa_positivo('Terminada a leitura de arquivo de inicialização, estado atual da lista de itens: ')
+        self.printaItens()
+
+    # printa todos os itens
+    def printaItens(self):
+        for item in self.itensMapa:
+            printa_neutro(item.serializa())
+
+    '''
+    @param: chave: Chave do item
+    Verifica se o item existe no "banco"
+    '''
+    def temItem(self, chave):
+        for elem in self.itensMapa:
+            if elem.chave == chave:
+                return self.itensMapa.index(elem)
+        return 
+
+    # Cria um novo item e o adiciona à lista
+    def criaItem(self, chave, valor, msg=[""]):
+        if  self.temItem(chave)==None:
+            self.itensMapa.append(ItemMapa(chave, valor))
+            msg[0] = 'Ok - Item criado.'
+            printa_positivo(msg[0])
+            return True
+        else:
+            msg[0] = 'NOk - Chave existente.'
+            printa_negativo(msg[0])
+            return False
+
+    # Atualiza um item, caso exista
+    def atualizaItem(self, chave, valor, msg=[""]):
+        index = self.temItem(chave)
+        if not index==None:
+            self.itensMapa[index] = ItemMapa(chave,valor)
+            msg[0] = 'Ok - Item atualizado.'
+            printa_positivo(msg[0])
+            return True
+        else:
+            msg[0] = 'NOk - Chave inexistente.'
+            printa_negativo(msg[0])
+            return False
+
+    # Remove um item, caso exista
+    def removeItem(self, chave, msg=[""]):
+        index = self.temItem(chave)
+        if not index==None:
+            del self.itensMapa[index]
+            msg[0] = 'Ok - Item removido.'
+            printa_positivo(msg[0])
+            self.printaItens()
+            return True
+        else:
+            msg[0] = 'NOk - Chave inexistente.'
+            printa_negativo(msg[0])
+            return False
+
+    # Lê um item e o retorna a conexão, caso exista
+    def leItem(self,chave, msg=[""]):
+        index = self.temItem(chave)
+        if not index==None:
+            msg[0] = str('Ok - Item: ' + self.itensMapa[index].serializa())
+            printa_positivo(msg[0])
+            return True
+        else:
+            msg[0] = 'NOk - Chave inexistente.'
+            printa_negativo(msg[0])
+            return False
+
+    # Lê um item e o retorna a conexão, caso exista
+    def leTodosItens(self, msg=[""]):
+        if len(self.itensMapa) > 0:
+            msg[0] = 'Ok - Itens: ' + str([p.serializa() for p in self.itensMapa])
+            printa_positivo(msg[0])
+            return True
+        else:
+            msg[0] = 'NOk - Banco vazio.'
+            printa_negativo(msg[0])
+            return False
+
+    def loga(self, msg):
+        logs.write(msg)
+        logs.flush() # garante a escrita no arquivo sem ter que fechá-lo
+        printa_positivo(msg + ' logada com sucesso')
+        
+    # Thread que pega os comandos recem chegados do cliente e despacha para as filas F2 e F3
+    def trataComandosFilaF1(self):
+        while online:
+            while self.filaF1.tamanho() > 0:
+                cmd = self.filaF1.desenfileira()
+                self.filaF2.enfileira(cmd)
+                self.filaF3.enfileira(cmd)
+                
+    # Thread que pega os comandos e os loga
+    def trataComandosFilaF2(self):
+        while online:
+            while self.filaF2.tamanho() > 0:
+                cmd = self.filaF2.desenfileira()
+                if cmd[:4] != comandos['read']:
+                    self.loga(cmd + '\n')
+                
+    # Thread que pega os comandos e os executa
+    def trataComandosFilaF3(self):
+        while online:
+            msg = [""] #Cria uma lista com apenas um elemento que será a mensagem retonada da execução dos comandos
+            while self.filaF3.tamanho() > 0:
+                cmd = self.filaF3.desenfileira()            
+                self.executaComandos(cmd, msg)
+                # interface_pb2.status(resposta=msg[0].encode())
+                # print('Lista atual:')
+                # printaItens()
+                
+    def encerraServidor(self):
+        global online
+        printa_negativo('Encerrando aplicação =(')
+        logs.close()
+        online = False
+
+ 
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
 def iniciaServidor():
-    '''
-    printa_positivo('Vai iniciar servidor TCP em ' + str(IP_SOCKET) + ':' + str(PORTA_SOCKET))
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # inicia servidor tcp
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # diz para reusar porta 
-    s.bind((IP_SOCKET, PORTA_SOCKET)) # atrela socket à porta no SO
-    s.listen(50)
-    return s
-    '''
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     interface_pb2_grpc.add_ManipulaMapaServicer_to_server(GrpcInterface(), server)
     server.add_insecure_port('[::]:' + str(PORTA_SOCKET))
     server.start()
     try:
-        while True:
+        while online:
             time.sleep(_ONE_DAY_IN_SECONDS)
     except KeyboardInterrupt:
         server.stop(0)
-        
 
-# loop infinito que escuta por novas conexoes e as adiciona no vetor "conexoes"
-def escutaConexoes(s):
-    global online
-    
-    while online:
-        conn, addr = s.accept()
-        printa_neutro('Iniciada conexão com ' + str(addr))
-        conexoes.append((conn, addr))
+    server.stop(0)
 
 # Main e ponto de inicio da aplicação
 def main():
@@ -263,29 +244,7 @@ def main():
 
     # args = parser.parse_args()
 
-    parsaConfigIni()
     iniciaServidor()
-    '''
-    fio1 = Thread(target=escutaConexoes, args=(s,))
-    fio1.daemon = True
-    fio1.start()  # inicia thread que escuta por novas conexoes
-    '''
-    # esta thread pode ser removida já que o server.start() vai cuidar disto
-    
-    fio2 = Thread(target=trataComandosFilaF1, args=())
-    fio2.daemon = True
-    fio2.start()  # inicia thread que trata elementos da fila F1
-    
-    fio3 = Thread(target=trataComandosFilaF2, args=())
-    fio3.daemon = True
-    fio3.start()  # inicia thread que trata elementos da fila F2
-    
-    fio4 = Thread(target=trataComandosFilaF3, args=())
-    fio4.daemon = True
-    fio4.start()  # inicia thread que trata elementos da fila F3
-
-    # escutaComandos() # na thread principal, escuta comandos vindos do(s) cliente(s) e os adiciona na Fila F1
-    # esta thread também pode ser removida já que vai escutar os comandos pelo server.start() do grpc
     
 if __name__ == '__main__':
     try:
