@@ -15,8 +15,6 @@ configs               = yaml.load(open('configs.yml', 'r'))
 IP_SOCKET             = configs['IP_SOCKET']
 PORTA_SOCKET          = configs['PORTA_SOCKET']
 TAMANHO_MAXIMO_PACOTE = configs['TAMANHO_MAXIMO_PACOTE']
-BASH                  = configs['BASH']
-PYTHON3               = configs['PYTHON3']
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
