@@ -250,6 +250,19 @@ def escutaConexoes(s):
 
 # Main e ponto de inicio da aplicação
 def main():
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("id", 
+    #     help="Identificador do servidor", 
+    #     type=int)
+    # parser.add_argument("anterior", 
+    #     help="Identificador do servidor anterior", 
+    #     type=int)
+    # parser.add_argument("posterior", 
+    #     help="Identificador do servidor posterior", 
+    #     type=int)
+
+    # args = parser.parse_args()
+
     parsaConfigIni()
     iniciaServidor()
     '''
