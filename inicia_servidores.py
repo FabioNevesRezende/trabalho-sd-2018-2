@@ -4,6 +4,7 @@
 import argparse
 import os
 import yaml
+from itertools import cycle
 
 CONFIGS = yaml.load(open('configs.yml', 'r'))
 
@@ -11,11 +12,21 @@ def salva_servidores(servidores):
     with open("servidores.txt", "+w") as file:
         file.write("\n".join(map(str, servidores)))
 
+def tem_resto(a, b):
+    return True if a % b > 0 else False
+
 def calcula_faixas(m, n):
     dois_a_m = 2 ** m
     divisor  = dois_a_m // n
-    primeiro = dois_a_m - 1
-    faixas   = list(range(primeiro, -1, -divisor))
+    primeiro = divisor if tem_resto(dois_a_m, n) else divisor - 1
+
+    faixas = list(range(primeiro, dois_a_m, divisor))
+    limite = dois_a_m - 1
+    ultimo = faixas[n - 1]
+
+    if ultimo < limite:
+        faixas[n - 1] = limite
+
     return faixas
 
 def inicia_servidor(atual, ant, post):
@@ -25,13 +36,19 @@ def inicia_servidor(atual, ant, post):
 
 def inicia_servidores(m, n):
     servidores = calcula_faixas(m, n)
-    salva_servidores(servidores)
+    # salva_servidores(servidores)
 
     for srv in range(n):
         atual = servidores[srv]
         ant   = servidores[srv - 1]
-        post  = servidores[srv + 1]
-        inicia_servidor(atual, ant, post)
+
+        try:
+            post = servidores[srv + 1]
+        except IndexError:
+            post = servidores[0]
+
+        print({'atual': atual, 'anterior': ant, 'posterior': post})
+        # inicia_servidor(atual, ant, post)
 
 def main():
     parser = argparse.ArgumentParser()
