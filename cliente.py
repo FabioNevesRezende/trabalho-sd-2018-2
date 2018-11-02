@@ -34,30 +34,26 @@ def esperaContinua():
 def limpaConsole():
     os.system('clear')
 
-'''
-def recebeRespostaCmd(s):
-    while manterRecebeRespostaCmdVivo:
-        try:
-            data = s.recv(TAMANHO_MAXIMO_PACOTE)
-            if not data: continue
-            trataRetorno(data.decode())
-        except:
-            pass
-'''    
-def trataRetorno(msg):
-    if re.match(r'Ok', msg) == None:
-        printa_negativo(msg)
+def trataRetorno(status):
+    status = status.resposta
+    if re.match(r'Ok', status) == None:
+        printa_negativo(status)
     else:
-        printa_positivo(msg)
+        printa_positivo(status)
         
-'''
-def trataComando(socket, cmd, opcao=""):
-    limpaConsole()
-    msg = str(cmd + opcao).encode()
-    socket.send(msg)
-    time.sleep(0.1)
-    esperaContinua()
-def encerraCliente(socket):
+def trataComando(cmd, opcao=""):
+    chave   = ''
+    valor   = ''
+
+    try:
+        chave = int(cmd.split(' ')[1])
+        valor = cmd.split(' ')[2]
+    except IndexError:
+        pass
+    
+    return chave, valor
+
+def encerraCliente():
     global manterRecebeRespostaCmdVivo
     global manterConversaUsuario
 
@@ -66,9 +62,6 @@ def encerraCliente(socket):
 
     if not manterConversaUsuario:
         time.sleep(5)
-        manterRecebeRespostaCmdVivo = False
-        socket.close()
-'''
 
 def conversaUsuario(stub):
     global manterConversaUsuario
@@ -76,16 +69,14 @@ def conversaUsuario(stub):
     while manterConversaUsuario:
         limpaConsole()
         printaMenuPrincipal()
-        inputUsuario = pegaInput()
+        inputUsuario = pegaInput().strip()
+
         if len(inputUsuario) == 0: continue
         
         opcao = inputUsuario.split(' ')[0]
-        c = int(inputUsuario.split(' ')[1])
-        v = inputUsuario.split(' ')[2]
-
-        printa_neutro('Comando a ser executado: ' + opcao + ' ' + str(c) + ' ' + v)
+        c, v  = trataComando(inputUsuario)
+        
         if opcao[:6].lower() == 'create':
-            #trataComando(s, comandos['create'], opcao[6:])
             response = stub.CriaItem(interface_pb2.msgItem(chave=c ,valor=v))
             time.sleep(0.1)
             esperaContinua()
@@ -102,36 +93,23 @@ def conversaUsuario(stub):
             time.sleep(0.1)
             esperaContinua()
         elif opcao[:4].lower() == 'sair':
-            #encerraCliente(s)
-            printa_negativo('Encerrando aplicação =(')
-            manterConversaUsuario = False
-            manterRecebeRespostaCmdVivo = False
-            return
+            encerraCliente()
         else:
             limpaConsole()
             printa_negativo('Opção Inválida')
             esperaContinua()
         if response:
             trataRetorno(response)
-            
+            esperaContinua()
+
+            del response
 
 def main():
-    '''
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((IP_SOCKET, PORTA_SOCKET))
-    s.setblocking(0)
-    '''
-    
     channel = grpc.insecure_channel(str(IP_SOCKET) + ':' + str(PORTA_SOCKET))
     stub = interface_pb2_grpc.ManipulaMapaStub(channel)
-        #response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-    #print("Greeter client received: " + response.message)
 
     fio1 = Thread(target=conversaUsuario, args=(stub, ))
     fio1.start()
-
-    #fio2 = Thread(target=recebeRespostaCmd, args=(stub, ))
-    #fio2.start()
 
 if __name__ == '__main__':
     main()
