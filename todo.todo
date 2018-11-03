@@ -1,0 +1,8 @@
+[] cli usa thread leitura	
+[] cli valida comando	
+[] cli usa thread resposta	
+[] thread resposta morre apos thread de leitura
+[] mapa como base de dados (big int-> bytes)	
+[] map em memoria	
+[] uso correto das filas f1, f2, f3, f4	
+[] usa grpc como método de comunicação
