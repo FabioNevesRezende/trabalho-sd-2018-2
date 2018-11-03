@@ -1,11 +1,11 @@
+from threading import *
+from termcolor import colored
 import grpc
 import interface_pb2
 import interface_pb2_grpc
-from termcolor import colored
 import sys
 import time
 import socket
-from threading import *
 import traceback
 import os
 import yaml
@@ -18,6 +18,7 @@ TAMANHO_MAXIMO_PACOTE = configs['TAMANHO_MAXIMO_PACOTE']
 DIR_LOG               = configs['DIR_LOG']
 DIR_SNAP              = configs['DIR_SNAP']
 SLEEP_TIME            = configs['SLEEP_TIME']
+PREFIXO_PORTA         = configs['PREFIXO_PORTA']
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
@@ -113,9 +114,9 @@ class ManipulaArquivosLog():
         if len(arquivos) > 0:
             self.index = int(arquivos[-1].split(separador)[1]) + 1
             for name in arquivos:
-                print(name) 
+                # print(name) 
                 self.listaArquivos.enfileira((open(self.dirNome + name, 'r+')))
-        print('Index - {}'.format(self.index))
+        # print('Index - {}'.format(self.index))
 
     #Remove o arquivo mais antigo da lista e da memoria
     def removeArquivo(self):
@@ -129,3 +130,27 @@ class ManipulaArquivosLog():
         self.listaArquivos.enfileira(arquivo)
         self.index += 1
         
+class Configs(object):
+    class __Configs:
+        def __init__(self, args=None):
+            self.id        = args.id
+            self.anterior  = args.anterior
+            self.posterior = args.posterior 
+            self.valida_posicao()
+        def __str__(self):
+            rep = {'id': self.id, '1º?': self.sou_primeiro, 'Nº?': self.sou_ultimo}
+            return str(rep)
+        def valida_posicao(self):
+            self.sou_primeiro = True if self.anterior > self.id else False
+            self.sou_ultimo   = True if self.posterior < self.id else False
+
+    instance = None
+    def __new__(cls, args=None): # __new__ always a classmethod
+        if not Configs.instance:
+            Configs.instance = Configs.__Configs(args)
+        return Configs.instance
+    def __getattr__(self, name):
+        return getattr(self.instance, name)
+
+def configura_tabela(args):
+    return Configs(args)

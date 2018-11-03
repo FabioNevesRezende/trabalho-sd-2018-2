@@ -36,15 +36,17 @@ def calcula_faixas(m, n):
 
 def inicia_servidor(atual, ant, post):
     geometry = ''
+    title    = ''
 
     if CONFIGS['BASH'].startswith('xfce'):
         geometry = '--geometry 60x10'
+        title    = '--title \'Servidor {}\''.format(atual)
 
     comando_python = '{} servidor.py {} {} {}'.format(CONFIGS['PYTHON'], atual, 
         ant, post)
 
-    comando = "{} -e '{}' {} &".format(CONFIGS['BASH'], comando_python, 
-        geometry) # DETACHED
+    comando = "{} -e '{}' {} {} &".format(CONFIGS['BASH'], comando_python, 
+        geometry, title) # DETACHED
 
     os.system(comando)
 

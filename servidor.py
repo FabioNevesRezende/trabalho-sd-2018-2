@@ -8,7 +8,7 @@ import io
 import shutil
 import re 
 
-online    = True # status do servidor online/offline
+online = True # status do servidor online/offline
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -18,14 +18,13 @@ try:
 except FileNotFoundError:
     logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
     
-    
 class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
     def __init__(self):
         self.itensMapa = [] # lista de elementos <bigInteger, string>
         self.filaF1    = Fila() # fila F1 especificada nos requisitos
         self.filaF2    = Fila() # fila F2 especificada nos requisitos
         self.filaF3    = Fila() # fila F3 especificada nos requisitos
-        self.ListaLogs = ManipulaArquivosLog(dirNome=DIR_LOG, index=0 )
+        self.ListaLogs = ManipulaArquivosLog(dirNome=DIR_LOG, index=0)
         self.ListaSnaps = ManipulaArquivosLog(dirNome=DIR_SNAP, index=1)
         self.parsaConfigIni()
         
@@ -245,11 +244,17 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
             self.ListaSnaps.adicionaArquivo(snap)
  
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
-def iniciaServidor():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+def iniciaServidor(args):
+    configs  = configura_tabela(args)
+    endereco = '[::]:{}{}'.format(PREFIXO_PORTA, configs.id)
+
+    printa_neutro('Escutando no endereço: {}'.format(endereco))
+
+    server  = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     interface_pb2_grpc.add_ManipulaMapaServicer_to_server(GrpcInterface(), server)
-    server.add_insecure_port('[::]:' + str(PORTA_SOCKET))
+    server.add_insecure_port(endereco)
     server.start()
+
     try:
         while online:
             time.sleep(_ONE_DAY_IN_SECONDS)
@@ -260,20 +265,20 @@ def iniciaServidor():
 
 # Main e ponto de inicio da aplicação
 def main():
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("id", 
-    #     help="Identificador do servidor", 
-    #     type=int)
-    # parser.add_argument("anterior", 
-    #     help="Identificador do servidor anterior", 
-    #     type=int)
-    # parser.add_argument("posterior", 
-    #     help="Identificador do servidor posterior", 
-    #     type=int)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("id", 
+        help="Identificador do servidor", 
+        type=int)
+    parser.add_argument("anterior", 
+        help="Identificador do servidor anterior", 
+        type=int)
+    parser.add_argument("posterior", 
+        help="Identificador do servidor posterior", 
+        type=int)
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
-    iniciaServidor()
+    iniciaServidor(args)
     
 if __name__ == '__main__':
     try:
@@ -283,3 +288,4 @@ if __name__ == '__main__':
         printa_negativo('Erro ao rodar servidor: ')
         printa_negativo(str(e))
         traceback.print_exc()
+        input()

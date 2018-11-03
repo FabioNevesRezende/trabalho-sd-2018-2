@@ -4,3 +4,5 @@ logs.log
 .vscode/*
 servidores.txt
 db_params.yaml
+logs/*
+snaps/*
