@@ -5,11 +5,14 @@ from concurrent import futures
 from comum import *
 import datetime
 import io
+import shutil
+import re 
 
 online    = True # status do servidor online/offline
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+#abre arquivos temporarios de logs
 try:
     logs = open('logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
 except FileNotFoundError:
@@ -22,8 +25,10 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         self.filaF1    = Fila() # fila F1 especificada nos requisitos
         self.filaF2    = Fila() # fila F2 especificada nos requisitos
         self.filaF3    = Fila() # fila F3 especificada nos requisitos
+        self.ListaLogs = ManipulaArquivosLog(dirNome=DIR_LOG, index=0 )
+        self.ListaSnaps = ManipulaArquivosLog(dirNome=DIR_SNAP, index=1)
         self.parsaConfigIni()
-
+        
         fio2 = Thread(target=self.trataComandosFilaF1, args=())
         fio2.daemon = True
         fio2.start()  # inicia thread que trata elementos da fila F1
@@ -36,6 +41,9 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         fio4.daemon = True
         fio4.start()  # inicia thread que trata elementos da fila F3
         
+        logs = Thread(target=self.criaSnapshoting, args=())
+        logs.daemon = True
+        logs.start() # Inicia threa que mantém snap e logs
         super()
 
     def CriaItem(self, request, context):
@@ -63,13 +71,18 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
         
     '''
-    Recria itens em memória
+    Recria itens em memória a partir do snap
     '''
     def criaItensMapaLogs(self):
-        try:
-            for linha in logs.readlines():
-                self.executaComandos(linha)
-        except io.UnsupportedOperation: # se não conseguir ler as linhas significa que o arquivo está aberto em modo de escrita apenas "w"
+        ultimoSnap = self.ListaSnaps.listaArquivos.recuperaUltimo()
+        
+        if ultimoSnap != None:
+            for linha in ultimoSnap.read().split('\', '):
+                if(linha == '[]'):
+                    break
+                linha = re.sub(r'[^a-zA-Z\d\s,:]','',linha.strip())
+                self.itensMapa.append(ItemMapa.desserializa(linha))
+        else:
             printa_neutro('Não há nenhum log a ser lido')
 
     #Função para executar os métodos em memória
@@ -213,7 +226,23 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         printa_negativo('Encerrando aplicação =(')
         logs.close()
         online = False
-
+    
+    # Método que criar os arquivos de log e snapshoting
+    def criaSnapshoting(self):
+        while(True):
+            time.sleep(SLEEP_TIME)
+            snapName = self.ListaSnaps.dirNome + 'snap.{}.txt'.format(str(self.ListaSnaps.index))
+            logName =  self.ListaLogs.dirNome + 'log.{}.log'.format(str(self.ListaLogs.index))
+            log = open(logName, "w")#Abre arquivo de log para cria-lo
+            log.close()
+            shutil.copyfile('logs.log', logName)#copia o log principal para o novo log
+            logs.truncate(0)#Limpa o arquivo principal de logs
+            snap = open(snapName, "w")
+            snap.write(str([p.serializa() for p in self.itensMapa]))
+            snap.flush() # garante a escrita no arquivo sem ter que fechá-lo
+            snap.close()
+            self.ListaLogs.adicionaArquivo(log)
+            self.ListaSnaps.adicionaArquivo(snap)
  
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
 def iniciaServidor():

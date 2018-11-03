@@ -15,6 +15,9 @@ configs               = yaml.load(open('configs.yml', 'r'))
 IP_SOCKET             = configs['IP_SOCKET']
 PORTA_SOCKET          = configs['PORTA_SOCKET']
 TAMANHO_MAXIMO_PACOTE = configs['TAMANHO_MAXIMO_PACOTE']
+DIR_LOG               = configs['DIR_LOG']
+DIR_SNAP              = configs['DIR_SNAP']
+SLEEP_TIME            = configs['SLEEP_TIME']
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
@@ -90,3 +93,39 @@ class Fila:
     def printaFila(self):
         for elem in self.fila:
             print(str(elem))
+
+    def recuperaUltimo(self):
+        if self.tamanho() > 0:
+            return self.fila[0]
+
+# Manipula os arquivos como um fila
+class ManipulaArquivosLog():
+    def __init__(self, dirNome,index=0, separador='.'):
+        self.dirNome = dirNome
+        self.listaArquivos = Fila()
+        self.index = index
+        self.recuperaArquivos()
+
+    # Instancia os arquivo na lista de arquivos e verifica o incremental para criação dos logs
+    def recuperaArquivos(self, separador='.'):
+        arquivos = os.listdir(self.dirNome)
+        arquivos.sort()
+        if len(arquivos) > 0:
+            self.index = int(arquivos[-1].split(separador)[1]) + 1
+            for name in arquivos:
+                print(name) 
+                self.listaArquivos.enfileira((open(self.dirNome + name, 'r+')))
+        print('Index - {}'.format(self.index))
+
+    #Remove o arquivo mais antigo da lista e da memoria
+    def removeArquivo(self):
+        caminhoRemovido = str(self.listaArquivos.desenfileira().name)
+        os.remove(caminhoRemovido)
+    
+    #Adiciona um arquivo em memoria e em arquivo
+    def adicionaArquivo(self, arquivo):
+        if self.listaArquivos.tamanho() >= 3:
+            self.removeArquivo()
+        self.listaArquivos.enfileira(arquivo)
+        self.index += 1
+        
