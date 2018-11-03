@@ -13,6 +13,10 @@ def salva_servidores(servidores):
     with open(caminho, "+w") as file:
         file.write("\n".join(map(str, servidores)))
 
+def salva_parametros(params):
+    caminho = CONFIGS['DB_PARAMS']
+    yaml.dump(params, open(caminho, "+w"), default_flow_style=False)
+
 def tem_resto(a, b):
     return True if a % b > 0 else False
 
@@ -46,7 +50,7 @@ def inicia_servidor(atual, ant, post):
 
 def inicia_servidores(m, n):
     servidores = calcula_faixas(m, n)
-    # salva_servidores(servidores)
+    salva_servidores(servidores)
 
     for srv in range(n):
         atual = servidores[srv]
@@ -57,7 +61,6 @@ def inicia_servidores(m, n):
         except IndexError:
             post = servidores[0]
 
-        # print({'atual': atual, 'anterior': ant, 'posterior': post})
         inicia_servidor(atual, ant, post)
 
 def main():
@@ -70,6 +73,8 @@ def main():
         type=int)
 
     args = parser.parse_args()
+
+    salva_parametros(vars(args))
     inicia_servidores(m=args.bits, n=args.servers)
 
 if __name__ == '__main__':

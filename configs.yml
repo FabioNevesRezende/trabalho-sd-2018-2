@@ -4,4 +4,5 @@ TAMANHO_MAXIMO_PACOTE: 3134 # 3Kb tamanho máximo do dado enviado a cada vez
 BASH: xfce4-terminal
 PYTHON: /usr/bin/python3
 SERVIDORES: ./servidores.txt
+DB_PARAMS: ./db_params.yaml
 PREFIXO_PORTA: '199'

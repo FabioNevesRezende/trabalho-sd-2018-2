@@ -3,3 +3,4 @@ servidor.db
 logs.log
 .vscode/*
 servidores.txt
+db_params.yaml
