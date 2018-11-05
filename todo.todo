@@ -1,8 +1,23 @@
-[] cli usa thread leitura	
-[] cli valida comando	
-[] cli usa thread resposta	
-[] thread resposta morre apos thread de leitura
-[] mapa como base de dados (big int-> bytes)	
-[] map em memoria	
-[] uso correto das filas f1, f2, f3, f4	
-[] usa grpc como método de comunicação
+Geral:
+    ☐ cli usa thread leitura	
+    ☐ cli valida comando	
+    ☐ cli usa thread resposta	
+    ☐ thread resposta morre apos thread de leitura
+    ✔ mapa como base de dados (big int-> bytes) @done(18-11-05 11:40)
+    ✔ map em memoria @done(18-11-05 11:40)
+    ☐ uso correto das filas f1, f2, f3, f4	
+    ☐ usa grpc como método de comunicação
+
+Testes:
+    ☐ Quando um servidor for carregado, imprima toda a sua tabela de roteamento e deixe explícito a faixa de chaves pertencentes ao servidor em questão. Mostre que as faixas são definidas como especificado.
+    ☐ Conecte-se a um servidor, para cada faixa de chaves, e execute (demonstrando o roteamento de requisições e que o funcionamento da entrega 1 é mantido na entrega 2
+        ☐ CRUD OK chave correspondendo a cada faixa de chaves
+        ☐ CRUD NOK chave correspondendo a cada faixa de chaves, .
+    ☐ Execute CRUD na chave 0.
+    ☐ Execute CRUD na chave 2^m - 1
+    ☐ Tente executar CRUD em uma chave negativa e verifique que falha.
+    ☐ Tente executar CRUD em uma chave maior que 2^m -1 e verifique que falha.
+    ☐ Após inserir uma chave/valor em cada faixa, reinicie os servidores e demostre que as chaves são recuperadas.
+    ☐ Demonstre que os snapshots são feitos com frequência pré-determinada e que snapshots antigos são removidos.
+    ☐ Demonstre que chaves inseridas durante a tomada do snapshot são adequadamente armazenadas no log.
+    
