@@ -12,6 +12,7 @@ sudo pip3 install termcolor
 sudo pip3 install pytest
 sudo pip3 install pyyaml
 sudo pip3 install grpcio grpcio-tools
+sudo pip3 install numpy
 ```
 
 # Geração de stubs

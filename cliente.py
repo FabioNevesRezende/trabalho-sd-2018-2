@@ -4,9 +4,15 @@
 from comum import *
 import random
 import re
+import numpy as np
+
+import signal
+import sys
 
 manterRecebeRespostaCmdVivo = True
-manterConversaUsuario = True
+manterConversaUsuario       = True
+servidores                  = None
+threads                     = list()
 
 # printa o menu principal em stdout
 def printaMenuPrincipal():
@@ -53,7 +59,7 @@ def trataComando(cmd, opcao=""):
     
     return chave, valor
 
-def encerraCliente():
+def encerraCliente(signal=None, frame=None):
     global manterRecebeRespostaCmdVivo
     global manterConversaUsuario
 
@@ -62,10 +68,15 @@ def encerraCliente():
 
     if not manterConversaUsuario:
         time.sleep(5)
+        sys.exit()
 
-def conversaUsuario(stub):
-    global manterConversaUsuario
+def cria_stub():
+    servidor = random.choice(servidores)
+    endereco = '{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, servidor)
+    channel  = grpc.insecure_channel(endereco)
+    return interface_pb2_grpc.ManipulaMapaStub(channel)
 
+def conversaUsuario():
     while manterConversaUsuario:
         limpaConsole()
         printaMenuPrincipal()
@@ -73,6 +84,7 @@ def conversaUsuario(stub):
 
         if len(inputUsuario) == 0: continue
         
+        stub = cria_stub()
         opcao = inputUsuario.split(' ')[0]
         c, v  = trataComando(inputUsuario)
         
@@ -104,15 +116,22 @@ def conversaUsuario(stub):
 
             del response
 
-def main():
-    # TODO: escolher servidor random
-    # TODO: carregar servidores em memória (NUMPY)
+def configura_cliente():
+    fio1 = Thread(target=conversaUsuario)
+    threads.append(fio1)
 
-    channel = grpc.insecure_channel('{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, 3))
-    stub    = interface_pb2_grpc.ManipulaMapaStub(channel)
-
-    fio1 = Thread(target=conversaUsuario, args=(stub, ))
     fio1.start()
+
+def main():
+    global servidores
+
+    try:
+        servidores = np.fromfile(SERVIDORES, sep='\n', dtype=int)
+        signal.signal(signal.SIGINT, encerraCliente)
+        configura_cliente()
+    except FileNotFoundError:
+        printa_negativo("Arquivo de servidores inexistente!")
+        return
 
 if __name__ == '__main__':
     main()
