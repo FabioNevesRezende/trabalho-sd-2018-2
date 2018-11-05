@@ -34,23 +34,28 @@ def calcula_faixas(m, n):
 
     return faixas
 
-def inicia_servidor(atual, ant, post):
-    geometry = ''
-    title    = ''
+def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
+    if bash == None:
+        bash = CONFIGS['BASH']
+    
+    if bash_params == None:
+        bash_params = CONFIGS['BASH_PARAMS']
 
-    if CONFIGS['BASH'].startswith('xfce'):
-        geometry = '--geometry 60x10'
-        title    = '--title \'Servidor {}\''.format(atual)
+    bash_params = bash_params.format(atual)
+
+    # if bash_params.startswith('gnome'):
+        # bash_params +=' '
 
     comando_python = '{} servidor.py {} {} {}'.format(CONFIGS['PYTHON'], atual, 
         ant, post)
 
-    comando = "{} -e '{}' {} {} &".format(CONFIGS['BASH'], comando_python, 
-        geometry, title) # DETACHED
+    comando = "{} {} -- bash -c '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
+
+    # print(comando)
 
     os.system(comando)
 
-def inicia_servidores(m, n):
+def inicia_servidores(m, n, bash=None, bash_params=None):
     servidores = calcula_faixas(m, n)
     salva_servidores(servidores)
 
@@ -63,7 +68,7 @@ def inicia_servidores(m, n):
         except IndexError:
             post = servidores[0]
 
-        inicia_servidor(atual, ant, post)
+        inicia_servidor(atual, ant, post, bash, bash_params)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -73,11 +78,18 @@ def main():
     parser.add_argument("servers", 
         help="quantidade de servidores (N)", 
         type=int)
+    parser.add_argument("--bash", "-bsh",
+        help="Bash/Terminal LINUX a ser usado", 
+        type=str)
+    parser.add_argument("--bash-params", "-bsh-params",
+        help="Parâmetros bash", 
+        type=str)
 
     args = parser.parse_args()
 
     salva_parametros(vars(args))
-    inicia_servidores(m=args.bits, n=args.servers)
+    inicia_servidores(m=args.bits, n=args.servers, 
+                      bash=args.bash, bash_params=args.bash_params)
 
 if __name__ == '__main__':
     main()

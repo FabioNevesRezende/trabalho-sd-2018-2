@@ -143,6 +143,17 @@ class Configs(object):
         def valida_posicao(self):
             self.sou_primeiro = True if self.anterior > self.id else False
             self.sou_ultimo   = True if self.posterior < self.id else False
+        def tabela(self):
+            faixa = list()
+            if self.sou_primeiro:
+                faixa.append(0)
+            else:
+                faixa.append(self.anterior + 1)
+            faixa.append(self.id)
+            
+            printa_neutro("Responsável pela faixa: {}".format(faixa))
+            printa_neutro("Nó anterior a mim: {}. Nó posterior a mim: {}".format(self.anterior, self.posterior))
+
 
     instance = None
     def __new__(cls, args=None): # __new__ always a classmethod
@@ -152,5 +163,5 @@ class Configs(object):
     def __getattr__(self, name):
         return getattr(self.instance, name)
 
-def configura_tabela(args):
+def configura_servidor(args):
     return Configs(args)

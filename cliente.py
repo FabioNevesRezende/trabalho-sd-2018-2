@@ -105,8 +105,11 @@ def conversaUsuario(stub):
             del response
 
 def main():
-    channel = grpc.insecure_channel(str(IP_SOCKET) + ':' + str(PORTA_SOCKET))
-    stub = interface_pb2_grpc.ManipulaMapaStub(channel)
+    # TODO: escolher servidor random
+    # TODO: carregar servidores em memória (NUMPY)
+
+    channel = grpc.insecure_channel('{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, 3))
+    stub    = interface_pb2_grpc.ManipulaMapaStub(channel)
 
     fio1 = Thread(target=conversaUsuario, args=(stub, ))
     fio1.start()
