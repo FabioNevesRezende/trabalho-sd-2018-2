@@ -115,9 +115,7 @@ class ManipulaArquivosLog():
         if len(arquivos) > 0:
             self.index = int(arquivos[-1].split(separador)[1]) + 1
             for name in arquivos:
-                # print(name) 
                 self.listaArquivos.enfileira((open(self.dirNome + name, 'r+')))
-        # print('Index - {}'.format(self.index))
 
     #Remove o arquivo mais antigo da lista e da memoria
     def removeArquivo(self):
@@ -138,12 +136,24 @@ class Configs(object):
             self.anterior  = args.anterior
             self.posterior = args.posterior 
             self.valida_posicao()
+            self.tabela()
+        
         def __str__(self):
-            rep = {'id': self.id, '1º?': self.sou_primeiro, 'Nº?': self.sou_ultimo}
+            rep = {'id': self.id }
             return str(rep)
+        
         def valida_posicao(self):
-            self.sou_primeiro = True if self.anterior > self.id else False
-            self.sou_ultimo   = True if self.posterior < self.id else False
+            self.sou_primeiro = True if self.anterior >= self.id else False
+            self.sou_ultimo   = True if self.posterior <= self.id else False
+
+        def valida_chave(self, chave):
+            if chave in self.range:
+                return (True,)
+            elif chave > self.id:
+                return (False, self.posterior)
+            else:
+                return (False, self.anterior)
+                
         def tabela(self):
             faixa = list()
             if self.sou_primeiro:
@@ -151,10 +161,11 @@ class Configs(object):
             else:
                 faixa.append(self.anterior + 1)
             faixa.append(self.id)
+
+            self.range = range(faixa[0], faixa[1] + 1)
             
             printa_neutro("Responsável pela faixa: {}".format(faixa))
-            printa_neutro("Nó anterior a mim: {}. Nó posterior a mim: {}".format(self.anterior, self.posterior))
-
+            printa_neutro("Nó anterior: {}. Nó posterior: {}".format(self.anterior, self.posterior))
 
     instance = None
     def __new__(cls, args=None): # __new__ always a classmethod

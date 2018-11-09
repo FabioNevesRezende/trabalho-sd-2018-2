@@ -22,7 +22,7 @@ class ManipulaMapaStub(object):
     self.LeItem = channel.unary_unary(
         '/ManipulaMapa/LeItem',
         request_serializer=interface__pb2.msgItem.SerializeToString,
-        response_deserializer=interface__pb2.msgItem.FromString,
+        response_deserializer=interface__pb2.status.FromString,
         )
     self.AtualizaItem = channel.unary_unary(
         '/ManipulaMapa/AtualizaItem',
@@ -79,7 +79,7 @@ def add_ManipulaMapaServicer_to_server(servicer, server):
       'LeItem': grpc.unary_unary_rpc_method_handler(
           servicer.LeItem,
           request_deserializer=interface__pb2.msgItem.FromString,
-          response_serializer=interface__pb2.msgItem.SerializeToString,
+          response_serializer=interface__pb2.status.SerializeToString,
       ),
       'AtualizaItem': grpc.unary_unary_rpc_method_handler(
           servicer.AtualizaItem,

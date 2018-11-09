@@ -23,9 +23,12 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         self.configs = Configs()
 
         self.itensMapa = [] # lista de elementos <bigInteger, string>
+
         self.filaF1    = Fila() # fila F1 especificada nos requisitos
         self.filaF2    = Fila() # fila F2 especificada nos requisitos
         self.filaF3    = Fila() # fila F3 especificada nos requisitos
+        self.filaF4    = Fila() # fila F3 especificada nos requisitos
+
         self.ListaLogs = ManipulaArquivosLog(dirNome=DIR_LOG, index=0)
         self.ListaSnaps = ManipulaArquivosLog(dirNome=DIR_SNAP, index=1)
         self.parsaConfigIni()
@@ -42,17 +45,38 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         fio4.daemon = True
         fio4.start()  # inicia thread que trata elementos da fila F3
         
-        logs = Thread(target=self.criaSnapshoting, args=())
-        logs.daemon = True
-        logs.start() # Inicia threa que mantém snap e logs
+        # logs = Thread(target=self.criaSnapshoting, args=())
+        # logs.daemon = True
+        # logs.start() # Inicia threa que mantém snap e logs
 
         super()
 
+    def trata_retorno(self, resposta):
+        return resposta.result().resposta
+
+    def cria_stub(self, servidor):
+        endereco = '{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, servidor)
+        channel  = grpc.insecure_channel(endereco)
+        return interface_pb2_grpc.ManipulaMapaStub(channel)
+
     def CriaItem(self, request, context):
-        recebido = str(comandos['create'] + ' ' + str(request.chave) + ' ' + str(request.valor))
-        self.filaF1.enfileira(recebido)
-        # return interface_pb2.status(resposta='Ok - Item criado.', itemResposta=(chave=request.chave, valor=request.valor))
-        return interface_pb2.status(resposta=('Recebi de você: ' + recebido).encode())
+        chave = request.chave
+        valor = request.valor
+
+        validacao = self.configs.valida_chave(chave)
+
+        if validacao[0]:
+            msg = ['']
+            self.criaItem(chave, valor, msg)
+            return interface_pb2.status(resposta=msg[0].encode())
+
+            # self.filaF1.enfileira((comandos['create'], chave, valor, context))
+        else:
+            stub = self.cria_stub(validacao[1])
+            printa_neutro("Chave {} não pertence a mim. Roteando para {}".format(chave, validacao[1]))
+            return stub.CriaItem(interface_pb2.msgItem(chave=chave ,valor=valor))
+            # return future.add_done_callback(self.trata_retorno)
+            # self.filaF4.enfileira((comandos['create'], chave, valor, context, stub))
         
     def LeItem(self, request, context):
         recebido = str(comandos['read'] + ' ' + str(request.chave) + ' ' + str(request.valor))
@@ -248,9 +272,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
  
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
 def iniciaServidor(args):
-    configs = configura_servidor(args)
-    configs.tabela()
-
+    configs  = configura_servidor(args)
     endereco = '[::]:{}{}'.format(PREFIXO_PORTA, configs.id)
 
     printa_neutro('Escutando no endereço: {}\n'.format(endereco))

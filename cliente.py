@@ -48,8 +48,8 @@ def trataRetorno(resposta_grpc):
         printa_positivo(status)
         
 def trataComando(cmd, opcao=""):
-    chave   = ''
-    valor   = ''
+    chave = ''
+    valor = ''
 
     try:
         chave = int(cmd.split(' ')[1])
@@ -87,6 +87,11 @@ def conversaUsuario():
         stub = cria_stub()
         opcao = inputUsuario.split(' ')[0]
         c, v  = trataComando(inputUsuario)
+
+        if c < 0:
+            printa_negativo('Chave inválida!')
+            esperaContinua()
+            continue
         
         if opcao[:6].lower() == 'create':
             future = stub.CriaItem.future(interface_pb2.msgItem(chave=c ,valor=v))

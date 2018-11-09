@@ -43,15 +43,14 @@ def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
 
     bash_params = bash_params.format(atual)
 
-    # if bash_params.startswith('gnome'):
-        # bash_params +=' '
-
     comando_python = '{} servidor.py {} {} {}'.format(CONFIGS['PYTHON'], atual, 
         ant, post)
 
-    comando = "{} {} -- bash -c '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
-    # print(comando)
+    comando = "{} {} -e '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
+
+    if bash.startswith('gnome'):
+        comando = "{} {} -- bash -c '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
     os.system(comando)
 

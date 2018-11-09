@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0finterface.proto\"\'\n\x07msgItem\x12\r\n\x05\x63have\x18\x01 \x01(\x03\x12\r\n\x05valor\x18\x02 \x01(\t\":\n\x06status\x12\x10\n\x08resposta\x18\x01 \x01(\t\x12\x1e\n\x0citemResposta\x18\x02 \x01(\x0b\x32\x08.msgItem2\x97\x01\n\x0cManipulaMapa\x12\x1f\n\x08\x43riaItem\x12\x08.msgItem\x1a\x07.status\"\x00\x12\x1e\n\x06LeItem\x12\x08.msgItem\x1a\x08.msgItem\"\x00\x12#\n\x0c\x41tualizaItem\x12\x08.msgItem\x1a\x07.status\"\x00\x12!\n\nDeletaItem\x12\x08.msgItem\x1a\x07.status\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x0finterface.proto\"\'\n\x07msgItem\x12\r\n\x05\x63have\x18\x01 \x01(\x03\x12\r\n\x05valor\x18\x02 \x01(\t\":\n\x06status\x12\x10\n\x08resposta\x18\x01 \x01(\t\x12\x1e\n\x0citemResposta\x18\x02 \x01(\x0b\x32\x08.msgItem2\x96\x01\n\x0cManipulaMapa\x12\x1f\n\x08\x43riaItem\x12\x08.msgItem\x1a\x07.status\"\x00\x12\x1d\n\x06LeItem\x12\x08.msgItem\x1a\x07.status\"\x00\x12#\n\x0c\x41tualizaItem\x12\x08.msgItem\x1a\x07.status\"\x00\x12!\n\nDeletaItem\x12\x08.msgItem\x1a\x07.status\"\x00\x62\x06proto3')
 )
 
 
@@ -128,7 +128,7 @@ _MANIPULAMAPA = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   serialized_start=121,
-  serialized_end=272,
+  serialized_end=271,
   methods=[
   _descriptor.MethodDescriptor(
     name='CriaItem',
@@ -145,7 +145,7 @@ _MANIPULAMAPA = _descriptor.ServiceDescriptor(
     index=1,
     containing_service=None,
     input_type=_MSGITEM,
-    output_type=_MSGITEM,
+    output_type=_STATUS,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(

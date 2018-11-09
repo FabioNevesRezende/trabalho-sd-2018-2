@@ -13,7 +13,7 @@ message status {
 
 service ManipulaMapa {
     rpc CriaItem (msgItem) returns (status) {}
-    rpc LeItem (msgItem) returns (msgItem) {}
+    rpc LeItem (msgItem) returns (status) {}
     rpc AtualizaItem (msgItem) returns (status) {}
     rpc DeletaItem (msgItem) returns (status) {}
 }
