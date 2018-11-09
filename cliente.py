@@ -71,34 +71,45 @@ def encerraCliente(signal=None, frame=None):
         time.sleep(5)
         sys.exit()
 
-def cria_stub():
+def criaStub():
     servidor = random.choice(servidores)
     endereco = '{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, servidor)
     channel  = grpc.insecure_channel(endereco)
     return interface_pb2_grpc.ManipulaMapaStub(channel)
 
+def notificaComandoInvalido(msg):
+    printa_negativo(msg)
+    esperaContinua()
+
+
 def conversaUsuario():
     while manterConversaUsuario:
         limpaConsole()
         printaMenuPrincipal()
+
         inputUsuario = pegaInput().strip()
+        opcao        = inputUsuario.split(' ')[0]
+
+        if opcao[:4].lower() == 'sair': encerraCliente()
 
         if len(inputUsuario) == 0: continue
         
         c, v  = trataComando(inputUsuario)
 
-        if c < 0:
-            printa_negativo('Chave inválida!')
-            esperaContinua()
+        try:
+            if c < 0:
+                notificaComandoInvalido('Chave inválida')
+                continue
+
+        except TypeError:
+            notificaComandoInvalido('Chave inválida!')
             continue
         
         if c > max_key:
-            printa_negativo('Chave inválida!')
-            esperaContinua()
+            notificaComandoInvalido('Chave inválida!')
             continue
 
-        stub = cria_stub()
-        opcao = inputUsuario.split(' ')[0]
+        stub = criaStub()
         
         if opcao[:6].lower() == 'create':
             future = stub.CriaItem.future(interface_pb2.msgItem(chave=c ,valor=v))
@@ -116,12 +127,9 @@ def conversaUsuario():
             future = stub.DeletaItem.future(interface_pb2.msgItem(chave=c))
             future.add_done_callback(trataRetorno)
             esperaContinua()
-        elif opcao[:4].lower() == 'sair':
-            encerraCliente()
         else:
             limpaConsole()
-            printa_negativo('Opção Inválida')
-            esperaContinua()
+            notificaComandoInvalido('Comando inválido!')       
 
 def configura_cliente():
     fio1 = Thread(target=conversaUsuario)
