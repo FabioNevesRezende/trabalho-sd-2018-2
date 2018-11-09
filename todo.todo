@@ -1,11 +1,11 @@
 Geral:
     ☐ cli usa thread leitura	
-    ☐ cli valida comando	
+    ✔ cli valida comando @done(18-11-09 18:10)
     ☐ cli usa thread resposta	
-    ☐ thread resposta morre apos thread de leitura
+    ✔ thread resposta morre apos thread de leitura @done(18-11-09 18:10)
     ✔ mapa como base de dados (big int-> bytes) @done(18-11-05 11:40)
     ✔ map em memoria @done(18-11-05 11:40)
-    ☐ uso correto das filas f1, f2, f3, f4	
+    ✔ uso correto das filas f1, f2, f3, f4 @done(18-11-09 18:09)
     ☐ usa grpc como método de comunicação
 
 Testes:

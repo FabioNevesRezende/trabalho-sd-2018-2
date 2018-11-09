@@ -66,6 +66,15 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
 
     def CriaItem(self, request, context):
         return self.trataRequisicao(comandos['create'], request.chave, request.valor, context)
+    
+    def DeletaItem(self, request, context):
+        return self.trataRequisicao(comandos['delete'], request.chave, request.valor, context)
+
+    def AtualizaItem(self, request, context):
+        return self.trataRequisicao(comandos['update'], request.chave, request.valor, context)
+
+    def LeItem(self, request, context):
+        return self.trataRequisicao(comandos['read'], request.chave, request.valor, context)
 
     def trataRequisicao(self, comando, chave, valor, _context):
         req          = (comando, chave, valor)

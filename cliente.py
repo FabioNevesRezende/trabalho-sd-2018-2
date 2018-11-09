@@ -19,7 +19,6 @@ max_key                     = None
 def printaMenuPrincipal():
     printa_positivo('Bem vindo. Digite uma das opções:')
     printa_neutro(' CREATE <chave> <valor> para criar um item no mapa')
-    printa_neutro(' READ para receber todos os itens do mapa')
     printa_neutro(' READ <chave> para receber um item pela sua chave')
     printa_neutro(' UPDATE <chave> <valor> para alterar um item no mapa')
     printa_neutro(' DELELE <chave> para remover um item pela sua chave')
