@@ -23,8 +23,8 @@ Testes:
         ☐ read
         ☐ delete
         ☐ update
-    ☐ Tente executar CRUD em uma chave negativa e verifique que falha.
-    ☐ Tente executar CRUD em uma chave maior que 2^m -1 e verifique que falha.
+    ✔ Tente executar CRUD em uma chave negativa e verifique que falha. @done(18-11-09 01:06)
+    ✔ Tente executar CRUD em uma chave maior que 2^m -1 e verifique que falha. @done(18-11-09 01:06)
     ☐ Após inserir uma chave/valor em cada faixa, reinicie os servidores e demostre que as chaves são recuperadas.
     ☐ Demonstre que os snapshots são feitos com frequência pré-determinada e que snapshots antigos são removidos.
     ☐ Demonstre que chaves inseridas durante a tomada do snapshot são adequadamente armazenadas no log.

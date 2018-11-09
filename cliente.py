@@ -13,6 +13,7 @@ manterRecebeRespostaCmdVivo = True
 manterConversaUsuario       = True
 servidores                  = None
 threads                     = list()
+max_key                     = None
 
 # printa o menu principal em stdout
 def printaMenuPrincipal():
@@ -84,14 +85,20 @@ def conversaUsuario():
 
         if len(inputUsuario) == 0: continue
         
-        stub = cria_stub()
-        opcao = inputUsuario.split(' ')[0]
         c, v  = trataComando(inputUsuario)
 
         if c < 0:
             printa_negativo('Chave inválida!')
             esperaContinua()
             continue
+        
+        if c > max_key:
+            printa_negativo('Chave inválida!')
+            esperaContinua()
+            continue
+
+        stub = cria_stub()
+        opcao = inputUsuario.split(' ')[0]
         
         if opcao[:6].lower() == 'create':
             future = stub.CriaItem.future(interface_pb2.msgItem(chave=c ,valor=v))
@@ -122,12 +129,20 @@ def configura_cliente():
 
     fio1.start()
 
+def le_parametros_banco():
+    global max_key
+
+    dbparams = yaml.load(open(DB_PARAMS, 'r'))
+    max_key  = 2 ** int(dbparams['bits']) - 1
+
 def main():
     global servidores
 
     try:
         servidores = np.fromfile(SERVIDORES, sep='\n', dtype=int)
         signal.signal(signal.SIGINT, encerraCliente)
+
+        le_parametros_banco()
         configura_cliente()
     except FileNotFoundError:
         printa_negativo("Arquivo de servidores inexistente!")

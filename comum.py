@@ -20,6 +20,7 @@ DIR_SNAP              = configs['DIR_SNAP']
 SLEEP_TIME            = configs['SLEEP_TIME']
 PREFIXO_PORTA         = configs['PREFIXO_PORTA']
 SERVIDORES            = configs['SERVIDORES']
+DB_PARAMS             = configs['DB_PARAMS']
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
