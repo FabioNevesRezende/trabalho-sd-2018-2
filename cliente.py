@@ -40,8 +40,8 @@ def esperaContinua():
 def limpaConsole():
     os.system('clear')
 
-def trataRetorno(status):
-    status = status.resposta
+def trataRetorno(resposta_grpc):
+    status = resposta_grpc.result().resposta
     if re.match(r'Ok', status) == None:
         printa_negativo(status)
     else:
@@ -89,20 +89,20 @@ def conversaUsuario():
         c, v  = trataComando(inputUsuario)
         
         if opcao[:6].lower() == 'create':
-            response = stub.CriaItem(interface_pb2.msgItem(chave=c ,valor=v))
-            time.sleep(0.1)
+            future = stub.CriaItem.future(interface_pb2.msgItem(chave=c ,valor=v))
+            future.add_done_callback(trataRetorno)
             esperaContinua()
         elif opcao[:4].lower() == 'read':
-            response = stub.LeItem(interface_pb2.msgItem(chave=c))
-            time.sleep(0.1)
+            future = stub.LeItem.future(interface_pb2.msgItem(chave=c))
+            future.add_done_callback(trataRetorno)
             esperaContinua()
         elif opcao[:6].lower() == 'update':
-            response = stub.AtualizaItem(interface_pb2.msgItem(chave=c, valor=v))
-            time.sleep(0.1)
+            future = stub.AtualizaItem.future(interface_pb2.msgItem(chave=c, valor=v))
+            future.add_done_callback(trataRetorno)
             esperaContinua()
         elif opcao[:6].lower() == 'delete':
-            response = stub.DeletaItem(interface_pb2.msgItem(chave=c))
-            time.sleep(0.1)
+            future = stub.DeletaItem.future(interface_pb2.msgItem(chave=c))
+            future.add_done_callback(trataRetorno)
             esperaContinua()
         elif opcao[:4].lower() == 'sair':
             encerraCliente()
@@ -110,11 +110,6 @@ def conversaUsuario():
             limpaConsole()
             printa_negativo('Opção Inválida')
             esperaContinua()
-        if response:
-            trataRetorno(response)
-            esperaContinua()
-
-            del response
 
 def configura_cliente():
     fio1 = Thread(target=conversaUsuario)
