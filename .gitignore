@@ -6,3 +6,4 @@ servidores.txt
 db_params.yaml
 logs/*
 snaps/*
+nodes/*

@@ -107,7 +107,13 @@ class ManipulaArquivosLog():
         self.dirNome = dirNome
         self.listaArquivos = Fila()
         self.index = index
+        self.criaDirSeNaoExiste(self.dirNome)
         self.recuperaArquivos()
+
+    def criaDirSeNaoExiste(self, dirNome):
+        print('Nome diretorio - {}'.format(dirNome))
+        if not os.path.exists(dirNome):
+            os.makedirs(dirNome)
 
     # Instancia os arquivo na lista de arquivos e verifica o incremental para criação dos logs
     def recuperaArquivos(self, separador='.'):

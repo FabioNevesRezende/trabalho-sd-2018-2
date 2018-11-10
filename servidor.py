@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 from concurrent import futures
 from comum import *
@@ -20,8 +20,9 @@ except FileNotFoundError:
     logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
     
 class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
-    def __init__(self):
+    def __init__(self, confServidor):
         self.configs = Configs()
+        self.enderecoServidor = 'nodes/server {}/'.format(confServidor.id) # Endereço onde os logs e snapshoting serão inseridos cada servidor terá um diretorio
 
         self.itensMapa = [] # lista de elementos <bigInteger, string>
 
@@ -29,16 +30,15 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         self.filaExecucao   = Fila() # fila F2 especificada nos requisitos
         self.filaRoteamento = Fila()
         self.filaLogs       = Fila()
+        self.ListaLogs = ManipulaArquivosLog(dirNome=self.enderecoServidor + DIR_LOG, index=0) # Lista com todos os arquivos de log
+        self.ListaSnaps = ManipulaArquivosLog(dirNome=self.enderecoServidor + DIR_SNAP, index=1) # Lista com todos os arquivos de Snapshoting
+        self.tempLog = self.criaArquivoDeLog() # Cria arquivo de logo temporário para cada servidor
+        self.RecuperaServidor()
 
         self.comecaThreadFilaComandos()
         self.comecaThreadFilaExecucao()
         self.comecaThreadFilaRoteamento()
-
-        # fio4 = Thread(target=self.trataFilaComandos, args=())
-        # fio4.daemon = True
-        # fio4.start()  # inicia thread que trata elementos da fila F3
-
-        
+        self.comecaThreadFilaLogs()
         # logs = Thread(target=self.criaSnapshoting, args=())
         # logs.daemon = True
         # logs.start() # Inicia threa que mantém snap e logs
@@ -63,6 +63,12 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         trataFilaRoteamento.daemon = True
         trataFilaRoteamento.name   = 'ThreadFilaRoteamento'
         trataFilaRoteamento.start()  # inicia thread que trata elementos da fila F3
+
+    def comecaThreadFilaLogs(self):
+        trataFilaLogs = Thread(target=self.criaSnapshoting, args=())
+        trataFilaLogs.daemon = True
+        trataFilaLogs.name   = 'ThreadFilaLogs'
+        trataFilaLogs.start()  # inicia thread que trata elementos da fila de logs
 
     def CriaItem(self, request, context):
         return self.trataRequisicao(comandos['create'], request.chave, request.valor, context)
@@ -210,8 +216,69 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
     def encerraServidor(self):
         global online
         printa_negativo('Encerrando aplicação =(')
-        logs.close()
+        self.tempLog.close()
         online = False
+
+    def criaArquivoDeLog(self):
+        '''
+            Cria arquivo de logs temporários onde serão inseridas as entradas do usuário
+        '''
+        try: 
+            logs = open(self.enderecoServidor + 'logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
+        except FileNotFoundError:
+            logs = open(self.enderecoServidor + 'logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido        
+        finally:
+            return logs
+
+    def RecuperaServidor(self):
+        '''
+            Recupera o servidor com último snapshothing + arquivo temporario de logs
+
+            *** Está faltando ler os comandos do arquivo temporário de logs ***
+        '''
+        ultimoSnap = self.ListaSnaps.listaArquivos.recuperaUltimo()
+        
+        if ultimoSnap != None:
+            for linha in ultimoSnap.read().split('\', '):
+                if(linha == '[]'):
+                    break
+                linha = re.sub(r'[^a-zA-Z\d\s,:]','',linha.strip())
+                self.itensMapa.append(ItemMapa.desserializa(linha))
+        else:
+            printa_neutro('Não há nenhum Snapshothing a ser lido!!')
+
+        # self.criaItensMapaLogs()
+
+
+    # def criaItensMapaLogs(): # Utilizar essa função para executar os comandos que estão no log de cada servidor
+    #     try:
+    #         for linha in self.tempLog.readlines():
+    #             executaComandos(linha)
+    #         except io.UnsupportedOperation: # se não conseguir ler as linhas significa que o arquivo está aberto em modo de escrita apenas "w"
+    #             printa_neutro('Não há nenhum log a ser lido')
+        
+        
+
+    # Método que criar os arquivos de log e snapshoting
+    def criaSnapshoting(self):
+        '''
+            Cria arquivos de log e de snapshothing
+        '''
+        while(True):
+            time.sleep(SLEEP_TIME)
+            snapName = self.ListaSnaps.dirNome + 'snap.{}.txt'.format(str(self.ListaSnaps.index))
+            logName =  self.ListaLogs.dirNome + 'log.{}.log'.format(str(self.ListaLogs.index))
+            log = open(logName, "w")#Abre arquivo de log para cria-lo
+            log.close()
+            shutil.copyfile(self.tempLog.name, logName)#copia o log principal para o novo log
+            self.tempLog.truncate(0)#Limpa o arquivo principal de logs
+            snap = open(snapName, "w")
+            snap.write(str([p.serializa() for p in self.itensMapa]))
+            snap.flush() # garante a escrita no arquivo sem ter que fechá-lo
+            snap.close()
+            self.ListaLogs.adicionaArquivo(log)
+            self.ListaSnaps.adicionaArquivo(snap)
+
 
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET
 def iniciaServidor(args):
@@ -223,7 +290,7 @@ def iniciaServidor(args):
     executor = futures.ThreadPoolExecutor(max_workers=10, thread_name_prefix='Main')
     server   = grpc.server(executor)
 
-    interface_pb2_grpc.add_ManipulaMapaServicer_to_server(GrpcInterface(), server)
+    interface_pb2_grpc.add_ManipulaMapaServicer_to_server(GrpcInterface(configs), server)
     server.add_insecure_port(endereco)
     server.start()
 
@@ -256,7 +323,6 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        logs.close()
         printa_negativo('Erro ao rodar servidor: ')
         printa_negativo(str(e))
         traceback.print_exc()
