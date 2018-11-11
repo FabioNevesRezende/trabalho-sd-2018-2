@@ -38,10 +38,8 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         self.comecaThreadFilaComandos()
         self.comecaThreadFilaExecucao()
         self.comecaThreadFilaRoteamento()
-        self.comecaThreadFilaLogs()
-        # logs = Thread(target=self.criaSnapshoting, args=())
-        # logs.daemon = True
-        # logs.start() # Inicia threa que mantém snap e logs
+        self.comecaThreadFilaLog()
+        self.comecaThreadFilaLogsSnap()
 
         super()
 
@@ -64,11 +62,17 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         trataFilaRoteamento.name   = 'ThreadFilaRoteamento'
         trataFilaRoteamento.start()  # inicia thread que trata elementos da fila F3
 
-    def comecaThreadFilaLogs(self):
-        trataFilaLogs = Thread(target=self.criaSnapshoting, args=())
+    def comecaThreadFilaLog(self):
+        trataFilaLogs = Thread(target=self.trataFilaLogs, args=())
         trataFilaLogs.daemon = True
         trataFilaLogs.name   = 'ThreadFilaLogs'
         trataFilaLogs.start()  # inicia thread que trata elementos da fila de logs
+
+    def comecaThreadFilaLogsSnap(self):
+        trataFilaLogsSnap = Thread(target=self.criaSnapshoting, args=())
+        trataFilaLogsSnap.daemon = True
+        trataFilaLogsSnap.name   = 'ThreadFilaLogs e Snapshoting'
+        trataFilaLogsSnap.start()  # inicia thread que trata elementos da fila de logs
 
     def CriaItem(self, request, context):
         return self.trataRequisicao(comandos['create'], request.chave, request.valor, context)
@@ -153,6 +157,14 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         channel  = grpc.insecure_channel(endereco)
         return interface_pb2_grpc.ManipulaMapaStub(channel)
 
+    # Thread que pega os comandos e os loga
+    def trataFilaLogs(self):
+        while online:
+            while self.filaLogs.tamanho() > 0:
+                cmd = self.filaLogs.desenfileira()
+                if cmd[:4] != comandos['read']:
+                    self.escreveLog(cmd)
+
     '''
     @param: chave: Chave do item
     Verifica se o item existe no "banco"
@@ -219,6 +231,13 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         self.tempLog.close()
         online = False
 
+    def escreveLog(self,msg):
+        cmd = ' '.join(map(str, msg)) + '\n'
+        if cmd[:4] != comandos['read']:
+            self.tempLog.write(cmd)
+            self.tempLog.flush() # garante a escrita no arquivo sem ter que fechá-lo
+            printa_positivo(cmd + ' logada com sucesso')
+
     def criaArquivoDeLog(self):
         '''
             Cria arquivo de logs temporários onde serão inseridas as entradas do usuário
@@ -254,7 +273,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
     #     try:
     #         for linha in self.tempLog.readlines():
     #             executaComandos(linha)
-    #         except io.UnsupportedOperation: # se não conseguir ler as linhas significa que o arquivo está aberto em modo de escrita apenas "w"
+    #         except io.UnsupportedOperation: # se não conseguir ler as     linhas significa que o arquivo está aberto em modo de escrita apenas "w"
     #             printa_neutro('Não há nenhum log a ser lido')
         
         
