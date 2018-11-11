@@ -102,27 +102,25 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         while online:
             while self.filaComandos.tamanho() > 0: # req + 
                 req, fila = self.filaComandos.desenfileira() # req + filaResposta
-                self.filaLogs.enfileira(req)
-                self.filaExecucao.enfileira((req, fila))
+                comando, chave, vlaor = req
+                validacao = self.configs.valida_chave(chave)
+                if validacao[0]:
+                    self.filaLogs.enfileira(req)
+                    self.filaExecucao.enfileira((req, fila))
+                else:
+                    printa_neutro("Chave {} não pertence a mim. Roteando para {}".format(chave, validacao[1]))
+                    self.filaRoteamento.enfileira((req, fila, validacao[1]))
+                    
 
     def trataFilaExecucao(self):
         while online:
             while self.filaExecucao.tamanho() > 0:
                 req, filaResposta     = self.filaExecucao.desenfileira()
                 comando, chave, valor = req
-
-                validacao = self.configs.valida_chave(chave)
                 resposta  = None
-
-                if validacao[0]:
-                    resposta = self.defineComandoAExecutar(comando, chave, valor)
-
-                    resposta = resposta.encode()
-
-                    filaResposta.put(interface_pb2.status(resposta=resposta))
-                else:
-                    printa_neutro("Chave {} não pertence a mim. Roteando para {}".format(chave, validacao[1]))
-                    self.filaRoteamento.enfileira((req, filaResposta, validacao[1]))
+                resposta = self.defineComandoAExecutar(comando, chave, valor)
+                resposta = resposta.encode()
+                filaResposta.put(interface_pb2.status(resposta=resposta))
 
     def trataFilaRoteamento(self):
         while online:
@@ -234,6 +232,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
             Escreve os logs no arquivo temporário que posteriormente será utilizado para popular os logs
         '''
         cmd = ' '.join(map(str, msg)) + '\n'
+        cmd.encode()
         if cmd[:4] != comandos['read']:
             self.tempLog.write(cmd)
             self.tempLog.flush() # garante a escrita no arquivo sem ter que fechá-lo
@@ -277,8 +276,8 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         except io.UnsupportedOperation: # se não conseguir ler as     linhas significa que o arquivo está aberto em modo de escrita apenas "w"
             printa_neutro('Não há nenhum log a ser lido')
         
-
     def defineComandoAExecutar(self, comando, chave, valor):
+        resposta = None
         if comando == comandos['create']:
             resposta = self.criaItem(chave, valor)
         if comando == comandos['update']:
@@ -288,7 +287,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         if comando == comandos['read']:
             resposta = self.leItem(chave)
         return resposta
-
 
     # Método que criar os arquivos de log e snapshoting
     def criaSnapshoting(self):
@@ -327,7 +325,7 @@ def iniciaServidor(args):
 
     try:
         while online:
-            time.sleep(_ONE_DAY_IN_SECONDS)
+            time.sleep(_ONE_DAY_IN_SECONDS)    
     except KeyboardInterrupt:
         server.stop(0)
 
