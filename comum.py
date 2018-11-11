@@ -65,9 +65,9 @@ class ItemMapa():
     # Desserializa uma string em um ItemMapa
     @staticmethod
     def desserializa(objsrl):
-        split = objsrl.split(',', 1)
+        split = objsrl.split(', ', 1)
         chave = split[0][6:]
-        valor = split[1][6:]
+        valor = split[1][6:].strip()
         return ItemMapa(int(chave),valor)
 
 # Esta classe Fila não é de nossa autoria
