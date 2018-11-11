@@ -102,7 +102,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         while online:
             while self.filaComandos.tamanho() > 0: # req + 
                 req, fila = self.filaComandos.desenfileira() # req + filaResposta
-                comando, chave, vlaor = req
+                _comando, chave, _valor = req
                 validacao = self.configs.valida_chave(chave)
                 if validacao[0]:
                     self.filaLogs.enfileira(req)
@@ -117,7 +117,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
             while self.filaExecucao.tamanho() > 0:
                 req, filaResposta     = self.filaExecucao.desenfileira()
                 comando, chave, valor = req
-                resposta  = None
                 resposta = self.defineComandoAExecutar(comando, chave, valor)
                 resposta = resposta.encode()
                 filaResposta.put(interface_pb2.status(resposta=resposta))
@@ -150,9 +149,9 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         '''
         while online:
             while self.filaLogs.tamanho() > 0:
-                cmd = self.filaLogs.desenfileira()
-                if cmd[:4] != comandos['read']:
-                    self.escreveLog(cmd)
+                comando, chave, valor = self.filaLogs.desenfileira()
+                if comando != comandos['read']:
+                    self.escreveLog((comando, chave, valor))
 
     def cria_stub(self, servidor):
         endereco = '{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, servidor)
@@ -225,18 +224,18 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         self.tempLog.close()
         online = False
 
-    def escreveLog(self,msg):
+    def escreveLog(self, req):
         '''
             @param msg: comando executado pelo usuário
 
             Escreve os logs no arquivo temporário que posteriormente será utilizado para popular os logs
         '''
-        cmd = ' '.join(map(str, msg)) + '\n'
-        cmd.encode()
-        if cmd[:4] != comandos['read']:
-            self.tempLog.write(cmd)
-            self.tempLog.flush() # garante a escrita no arquivo sem ter que fechá-lo
-            printa_positivo(cmd + ' logada com sucesso')
+
+        comando, chave, valor = req
+        cmd = '{} {} {}\n'.format(comando, chave, valor)
+        self.tempLog.write(cmd)
+        self.tempLog.flush() # garante a escrita no arquivo sem ter que fechá-lo
+        printa_positivo(cmd + ' logada com sucesso')
 
     def criaArquivoDeLog(self):
         '''

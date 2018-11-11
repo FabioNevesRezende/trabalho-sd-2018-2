@@ -132,8 +132,6 @@ def conversaUsuario():
 
 def configura_cliente():
     fio1 = Thread(target=conversaUsuario)
-    threads.append(fio1)
-
     fio1.start()
 
 def le_parametros_banco():
