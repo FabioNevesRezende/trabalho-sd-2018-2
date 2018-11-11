@@ -43,6 +43,9 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
 
         super()
 
+    def __del__(self):
+        self.tempLog.close()
+
     def comecaThreadFilaComandos(self):
         trataFilaComandos = Thread(target=self.trataFilaComandos, args=())
         trataFilaComandos.daemon = True
@@ -299,7 +302,9 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
             log = open(logName, "w")#Abre arquivo de log para cria-lo
             log.close()
             shutil.copyfile(self.tempLog.name, logName)#copia o log principal para o novo log
-            self.tempLog.truncate(0)#Limpa o arquivo principal de logs
+            self.tempLog = open(self.enderecoServidor + 'logs.log', 'w') 
+            self.tempLog.write('')
+            self.tempLog.flush()
             snap = open(snapName, "w")
             snap.write(str([p.serializa() for p in self.itensMapa]))
             snap.flush() # garante a escrita no arquivo sem ter que fechá-lo
