@@ -115,14 +115,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
                 resposta  = None
 
                 if validacao[0]:
-                    if comando == comandos['create']:
-                        resposta = self.criaItem(chave, valor)
-                    if comando == comandos['update']:
-                        resposta = self.atualizaItem(chave,valor)
-                    if comando == comandos['delete']:
-                        resposta = self.removeItem(chave) 
-                    if comando == comandos['read']:
-                        resposta = self.leItem(chave)
+                    resposta = self.defineComandoAExecutar(comando, chave, valor)
 
                     resposta = resposta.encode()
 
@@ -130,7 +123,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
                 else:
                     printa_neutro("Chave {} não pertence a mim. Roteando para {}".format(chave, validacao[1]))
                     self.filaRoteamento.enfileira((req, filaResposta, validacao[1]))
-
 
     def trataFilaRoteamento(self):
         while online:
@@ -152,24 +144,28 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
 
                 filaResposta.put(resposta)
 
-    def cria_stub(self, servidor):
-        endereco = '{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, servidor)
-        channel  = grpc.insecure_channel(endereco)
-        return interface_pb2_grpc.ManipulaMapaStub(channel)
-
-    # Thread que pega os comandos e os loga
+        # Thread que pega os comandos e os loga
+    
     def trataFilaLogs(self):
+        '''
+            Trata a fila de logs para o log temporário
+        '''
         while online:
             while self.filaLogs.tamanho() > 0:
                 cmd = self.filaLogs.desenfileira()
                 if cmd[:4] != comandos['read']:
                     self.escreveLog(cmd)
 
-    '''
-    @param: chave: Chave do item
-    Verifica se o item existe no "banco"
-    '''
+    def cria_stub(self, servidor):
+        endereco = '{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, servidor)
+        channel  = grpc.insecure_channel(endereco)
+        return interface_pb2_grpc.ManipulaMapaStub(channel)
+
     def temItem(self, chave):
+        '''
+            @param: chave: Chave do item
+            Verifica se o item existe no "banco"
+        '''
         for elem in self.itensMapa:
             if elem.chave == chave:
                 return self.itensMapa.index(elem)
@@ -232,6 +228,11 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         online = False
 
     def escreveLog(self,msg):
+        '''
+            @param msg: comando executado pelo usuário
+
+            Escreve os logs no arquivo temporário que posteriormente será utilizado para popular os logs
+        '''
         cmd = ' '.join(map(str, msg)) + '\n'
         if cmd[:4] != comandos['read']:
             self.tempLog.write(cmd)
@@ -266,17 +267,28 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         else:
             printa_neutro('Não há nenhum Snapshothing a ser lido!!')
 
-        # self.criaItensMapaLogs()
+        self.criaItensMapaLogs()
 
+    def criaItensMapaLogs(self): # Utilizar essa função para executar os comandos que estão no log de cada servidor
+        try:
+            for linha in self.tempLog.readlines():
+                temp = linha.split(' ')
+                self.defineComandoAExecutar(temp[0], int(temp[1]) , temp[2])
+        except io.UnsupportedOperation: # se não conseguir ler as     linhas significa que o arquivo está aberto em modo de escrita apenas "w"
+            printa_neutro('Não há nenhum log a ser lido')
+        
 
-    # def criaItensMapaLogs(): # Utilizar essa função para executar os comandos que estão no log de cada servidor
-    #     try:
-    #         for linha in self.tempLog.readlines():
-    #             executaComandos(linha)
-    #         except io.UnsupportedOperation: # se não conseguir ler as     linhas significa que o arquivo está aberto em modo de escrita apenas "w"
-    #             printa_neutro('Não há nenhum log a ser lido')
-        
-        
+    def defineComandoAExecutar(self, comando, chave, valor):
+        if comando == comandos['create']:
+            resposta = self.criaItem(chave, valor)
+        if comando == comandos['update']:
+            resposta = self.atualizaItem(chave,valor)
+        if comando == comandos['delete']:
+            resposta = self.removeItem(chave) 
+        if comando == comandos['read']:
+            resposta = self.leItem(chave)
+        return resposta
+
 
     # Método que criar os arquivos de log e snapshoting
     def criaSnapshoting(self):
