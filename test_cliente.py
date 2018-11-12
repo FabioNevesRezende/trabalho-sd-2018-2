@@ -3,6 +3,10 @@ import random
 import os
 from concurrent import futures
 import time
+import yaml
+
+configs               = yaml.load(open('configs.yml', 'r'))
+DB_PARAMS           = configs['DB_PARAMS']
 
 class TestCliente:
   @classmethod
@@ -157,24 +161,106 @@ class TestCliente:
       pass
 
   def run_all_but_recovery(self, process_id = None):
-    self.crud_ok(process_id)
-    self.crud_nok(process_id)
-    self.execution(process_id)
+    # self.crud_maxLenght(process_id)
+    # self.crudId(0)
+    self.createInRange()
 
   def call_and_pass_pid(self):
     self.run_all_but_recovery(os.getpid())
 
-  def test_sequencitial(self):
+  def test_cruds(self):
     self.run_all_but_recovery()
 
-    self.clear_log()
-    self.recovery()
+  # def test_concurrent(self):
+  #   time.sleep(30)
+  #   self.clear_log()
 
-  def test_concurrent(self):
-    time.sleep(30)
-    self.clear_log()
-
-    self.first_call = True
-    with futures.ProcessPoolExecutor(max_workers=self.clients) as executor:
-      [executor.submit(self.call_and_pass_pid) for i in range(self.clients)]
+  #   self.first_call = True
+  #   with futures.ProcessPoolExecutor(max_workers=self.clients) as executor:
+  #     [executor.submit(self.call_and_pass_pid) for i in range(self.clients)]
   
+
+  
+
+  def crudId(self, id):
+    client = pexpect.spawn('python3 cliente.py')
+
+    p_id    = 'ne'
+    rand_id = id
+    regex   = r'[^N]Ok'
+
+    
+    client.sendline('create {} old-{}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex) # match somente Ok, e não NOk
+
+    client.sendline('\nread {}'.format(rand_id))
+    assert 0 == client.expect(regex + ' - Item: Chave: {}, Valor: old-{}'.format(rand_id, p_id))
+
+    client.sendline('\nupdate {} new-{}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex)
+    
+    client.sendline('\nread {}'.format(rand_id))
+    assert 0 == client.expect(regex + ' - Item: Chave: {}, Valor: new-{}'.format(rand_id, p_id))
+
+    client.sendline('\ndelete {}'.format(rand_id))
+    assert 0 == client.expect(r'[^N]Ok')
+
+    client.kill(9)
+  
+  def crud_maxLenght(self, process_id = None):
+    client = pexpect.spawn('python3 cliente.py')
+
+    p_id    = 'ne'
+    rand_id = self.le_parametros_banco()
+    regex   = r'[^N]Ok'
+
+    
+    client.sendline('create {} old-{}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex) # match somente Ok, e não NOk
+
+    client.sendline('\nread {}'.format(rand_id))
+    assert 0 == client.expect(regex + ' - Item: Chave: {}, Valor: old-{}'.format(rand_id, p_id))
+
+    client.sendline('\nupdate {} new-{}'.format(rand_id, p_id))
+    assert 0 == client.expect(regex)
+    
+    client.sendline('\nread {}'.format(rand_id))
+    assert 0 == client.expect(regex + ' - Item: Chave: {}, Valor: new-{}'.format(rand_id, p_id))
+
+    client.sendline('\ndelete {}'.format(rand_id))
+    assert 0 == client.expect(r'[^N]Ok')
+
+    client.kill(9)
+
+  def createInRange(self):
+    client = pexpect.spawn('python3 cliente.py')
+
+    p_id    = 'ne'
+    regex   = r'[^N]Ok'
+
+    servidores = self.servidores()
+
+    client.sendline('create {} old-{}\n'.format(servidores[0], p_id))
+    # client.sendline('create {} old-{}\n\n\n\n\n'.format(servidores[1], p_id))
+    # client.sendline('create {} old-{}\n\n\n\n\n'.format(servidores[2], p_id))
+    # client.sendline('create {} old-{}\n\n\n\n\n'.format(servidores[3], p_id))
+
+    # for servidor in self.servidores():
+      # client.sendline('create {} old-{}\n\n\n\n\n'.format(servidor, p_id))
+        #assert 0 == client.expect(regex) # match somente Ok, e não NOk
+
+
+
+
+
+  def le_parametros_banco(self):
+    dbparams = yaml.load(open(DB_PARAMS, 'r'))
+    max_key  = 2 ** int(dbparams['bits']) - 1
+    return max_key
+
+  def servidores(self):
+    servidores = open('./servidores.txt', 'r')
+    listaServidor = []
+    for linha in servidores.readlines():
+        listaServidor.append(int(linha))
+    return listaServidor
