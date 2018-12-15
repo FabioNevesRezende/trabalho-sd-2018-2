@@ -13,6 +13,7 @@ sudo python -m pip install pytest
 sudo python -m pip install pyyaml
 sudo python -m pip install grpcio grpcio-tools
 sudo python -m pip install numpy
+sudo python -m pip install future
 ```
 
 # Geração de stubs
