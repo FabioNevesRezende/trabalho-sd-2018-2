@@ -10,12 +10,12 @@ CONFIGS = yaml.load(open('configs.yml', 'r'))
 
 def salva_servidores(servidores):
     caminho = CONFIGS['SERVIDORES']
-    with open(caminho, "+w") as file:
+    with open(caminho, "w") as file:
         file.write("\n".join(map(str, servidores)))
 
 def salva_parametros(params):
     caminho = CONFIGS['DB_PARAMS']
-    yaml.dump(params, open(caminho, "+w"), default_flow_style=False)
+    yaml.dump(params, open(caminho, "w"), default_flow_style=False)
 
 def tem_resto(a, b):
     return True if a % b > 0 else False

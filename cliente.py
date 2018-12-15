@@ -27,7 +27,7 @@ def printaMenuPrincipal():
 
 # pega o input do teclado
 def pegaInput():
-    inp = input()
+    inp = raw_input()
     sys.stdin.flush() # limpa o buffer stdin
     return inp
 
@@ -149,7 +149,7 @@ def main():
 
         le_parametros_banco()
         configura_cliente()
-    except FileNotFoundError:
+    except OSError:
         printa_negativo("Arquivo de servidores inexistente!")
         return
 

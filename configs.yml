@@ -1,7 +1,7 @@
 IP_SOCKET: '127.0.0.1' # endereço IP que o servidor vai rodar
 PORTA_SOCKET: 8888 # porta que o servidor vai rodar
 TAMANHO_MAXIMO_PACOTE: 3134 # 3Kb tamanho máximo do dado enviado a cada vez
-BASH: xfce4-terminal
+BASH: x-terminal-emulator
 BASH_PARAMS: --geometry 60x10 --title 'Servidor {}'
 PYTHON: /usr/bin/python3
 SERVIDORES: ./servidores.txt

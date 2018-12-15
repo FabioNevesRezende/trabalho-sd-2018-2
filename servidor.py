@@ -16,7 +16,7 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 #abre arquivos temporarios de logs
 try:
     logs = open('logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
-except FileNotFoundError:
+except OSError:
     logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
     
 class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
@@ -246,7 +246,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         '''
         try: 
             logs = open(self.enderecoServidor + 'logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
-        except FileNotFoundError:
+        except OSError:
             logs = open(self.enderecoServidor + 'logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido        
         finally:
             return logs
