@@ -24,6 +24,9 @@ import os
 import yaml
 import argparse
 
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 configs               = yaml.load(open('configs.yml', 'r'))
 IP_SOCKET             = configs['IP_SOCKET']
 PORTA_SOCKET          = configs['PORTA_SOCKET']
