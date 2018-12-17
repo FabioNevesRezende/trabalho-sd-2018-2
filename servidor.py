@@ -16,7 +16,7 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 #abre arquivos temporarios de logs
 try:
     logs = open('logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
-except OSError:
+except IOError as ex:
     logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
     
 class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
@@ -244,10 +244,13 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         '''
             Cria arquivo de logs temporários onde serão inseridas as entradas do usuário
         '''
+        logs = None
         try: 
             logs = open(self.enderecoServidor + 'logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
-        except OSError:
+        except IOError as ex:
             logs = open(self.enderecoServidor + 'logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido        
+            logs.close()
+            logs = open (self.enderecoServidor + 'logs.log', 'r+')
         finally:
             return logs
 
@@ -303,7 +306,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
             log.close()
             shutil.copyfile(self.tempLog.name, logName)#copia o log principal para o novo log
             self.tempLog = open(self.enderecoServidor + 'logs.log', 'w') 
-            self.tempLog.write('')
+            # self.tempLog.write('')
             self.tempLog.flush()
             snap = open(snapName, "w")
             snap.write(str([p.serializa() for p in self.itensMapa]))
