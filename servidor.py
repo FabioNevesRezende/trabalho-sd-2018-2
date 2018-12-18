@@ -11,40 +11,19 @@ import queue
 
 online = True # status do servidor online/offline
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
-#abre arquivos temporarios de logs
-try:
-    logs = open('logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
-except IOError as ex:
-    logs = open('logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido
-    
 class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
     def __init__(self, confServidor):
         self.configs = Configs()
-        self.enderecoServidor = 'nodes/server {}/'.format(confServidor.id) # Endereço onde os logs e snapshoting serão inseridos cada servidor terá um diretorio
-
-        self.itensMapa = [] # lista de elementos <bigInteger, string>
 
         self.filaComandos   = Fila() # fila F1 especificada nos requisitos
         self.filaExecucao   = Fila() # fila F2 especificada nos requisitos
         self.filaRoteamento = Fila()
-        self.filaLogs       = Fila()
-        self.ListaLogs = ManipulaArquivosLog(dirNome=self.enderecoServidor + DIR_LOG, index=0) # Lista com todos os arquivos de log
-        self.ListaSnaps = ManipulaArquivosLog(dirNome=self.enderecoServidor + DIR_SNAP, index=1) # Lista com todos os arquivos de Snapshoting
-        self.tempLog = self.criaArquivoDeLog() # Cria arquivo de logo temporário para cada servidor
-        self.RecuperaServidor()
 
         self.comecaThreadFilaComandos()
         self.comecaThreadFilaExecucao()
         self.comecaThreadFilaRoteamento()
-        self.comecaThreadFilaLog()
-        self.comecaThreadFilaLogsSnap()
 
         super()
-
-    def __del__(self):
-        self.tempLog.close()
 
     def comecaThreadFilaComandos(self):
         trataFilaComandos = Thread(target=self.trataFilaComandos, args=())
@@ -57,7 +36,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         trataFilaExecucao.daemon = True
         trataFilaExecucao.name   = 'ThreadFilaExecucao'
         trataFilaExecucao.start()  # inicia thread que trata elementos da fila F2
-
     
     def comecaThreadFilaRoteamento(self):
         trataFilaRoteamento = Thread(target=self.trataFilaRoteamento, args=())
@@ -70,12 +48,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         trataFilaLogs.daemon = True
         trataFilaLogs.name   = 'ThreadFilaLogs'
         trataFilaLogs.start()  # inicia thread que trata elementos da fila de logs
-
-    def comecaThreadFilaLogsSnap(self):
-        trataFilaLogsSnap = Thread(target=self.criaSnapshoting, args=())
-        trataFilaLogsSnap.daemon = True
-        trataFilaLogsSnap.name   = 'ThreadFilaLogs e Snapshoting'
-        trataFilaLogsSnap.start()  # inicia thread que trata elementos da fila de logs
 
     def CriaItem(self, request, context):
         return self.trataRequisicao(comandos['create'], request.chave, request.valor, context)
@@ -108,12 +80,10 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
                 _comando, chave, _valor = req
                 validacao = self.configs.valida_chave(chave)
                 if validacao[0]:
-                    self.filaLogs.enfileira(req)
                     self.filaExecucao.enfileira((req, fila))
                 else:
                     printa_neutro("Chave {} não pertence a mim. Roteando para {}".format(chave, validacao[1]))
                     self.filaRoteamento.enfileira((req, fila, validacao[1]))
-                    
 
     def trataFilaExecucao(self):
         while online:
@@ -130,6 +100,9 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
                 req, filaResposta, servidor = self.filaRoteamento.desenfileira()
                 comando, c, v = req
                 resposta      = None
+
+        # TODO: corrigir roteamento
+
 
                 stub = self.cria_stub(servidor)
 
@@ -227,60 +200,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         self.tempLog.close()
         online = False
 
-    def escreveLog(self, req):
-        '''
-            @param msg: comando executado pelo usuário
-
-            Escreve os logs no arquivo temporário que posteriormente será utilizado para popular os logs
-        '''
-
-        comando, chave, valor = req
-        cmd = '{} {} {}\n'.format(comando, chave, valor)
-        self.tempLog.write(cmd)
-        self.tempLog.flush() # garante a escrita no arquivo sem ter que fechá-lo
-        printa_positivo(cmd + ' logada com sucesso')
-
-    def criaArquivoDeLog(self):
-        '''
-            Cria arquivo de logs temporários onde serão inseridas as entradas do usuário
-        '''
-        logs = None
-        try: 
-            logs = open(self.enderecoServidor + 'logs.log', 'r+') # r+ modo leitura e escrita ao mesmo tempo, se o arquivo não existir, ele NÃO o cria, por isso o try-catch
-        except IOError as ex:
-            logs = open(self.enderecoServidor + 'logs.log', 'w') # r+ modo escrita já que é a primeira vez não tem nada a ser lido        
-            logs.close()
-            logs = open (self.enderecoServidor + 'logs.log', 'r+')
-        finally:
-            return logs
-
-    def RecuperaServidor(self):
-        '''
-            Recupera o servidor com último snapshothing + arquivo temporario de logs
-
-            *** Está faltando ler os comandos do arquivo temporário de logs ***
-        '''
-        ultimoSnap = self.ListaSnaps.listaArquivos.recuperaUltimo()
-        
-        if ultimoSnap != None:
-            for linha in ultimoSnap.read().split('\', '):
-                if(linha == '[]'):
-                    break
-                linha = re.sub(r'[^a-zA-Z\d\s,:]','',linha.strip())
-                self.itensMapa.append(ItemMapa.desserializa(linha))
-        else:
-            printa_neutro('Não há nenhum Snapshothing a ser lido!!')
-
-        self.criaItensMapaLogs()
-
-    def criaItensMapaLogs(self): # Utilizar essa função para executar os comandos que estão no log de cada servidor
-        try:
-            for linha in self.tempLog.readlines():
-                temp = linha.split(' ')
-                self.defineComandoAExecutar(temp[0], int(temp[1]) , temp[2])
-        except io.UnsupportedOperation: # se não conseguir ler as     linhas significa que o arquivo está aberto em modo de escrita apenas "w"
-            printa_neutro('Não há nenhum log a ser lido')
-        
     def defineComandoAExecutar(self, comando, chave, valor):
         resposta = None
         if comando == comandos['create']:
@@ -292,28 +211,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         if comando == comandos['read']:
             resposta = self.leItem(chave)
         return resposta
-
-    # Método que criar os arquivos de log e snapshoting
-    def criaSnapshoting(self):
-        '''
-            Cria arquivos de log e de snapshothing
-        '''
-        while(True):
-            time.sleep(SLEEP_TIME)
-            snapName = self.ListaSnaps.dirNome + 'snap.{}.txt'.format(str(self.ListaSnaps.index))
-            logName =  self.ListaLogs.dirNome + 'log.{}.log'.format(str(self.ListaLogs.index))
-            log = open(logName, "w")#Abre arquivo de log para cria-lo
-            log.close()
-            shutil.copyfile(self.tempLog.name, logName)#copia o log principal para o novo log
-            self.tempLog = open(self.enderecoServidor + 'logs.log', 'w') 
-            # self.tempLog.write('')
-            self.tempLog.flush()
-            snap = open(snapName, "w")
-            snap.write(str([p.serializa() for p in self.itensMapa]))
-            snap.flush() # garante a escrita no arquivo sem ter que fechá-lo
-            snap.close()
-            self.ListaLogs.adicionaArquivo(log)
-            self.ListaSnaps.adicionaArquivo(snap)
 
 
 # inicia o servidor TCP no endereço IP_SOCKET e na porta PORTA_SOCKET

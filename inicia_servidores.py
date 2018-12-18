@@ -7,10 +7,11 @@ import yaml
 
 CONFIGS = yaml.load(open('configs.yml', 'r'))
 
-def salva_servidores(servidores):
+def salva_servidores(servers):
     caminho = CONFIGS['SERVIDORES']
     with open(caminho, "w") as file:
-        file.write("\n".join(map(str, servidores)))
+        s = ['{}{}'.format(s,i) for i in xrange(3) for s in servers]
+        file.write("\n".join(s))
 
 def salva_parametros(params):
     caminho = CONFIGS['DB_PARAMS']
@@ -52,21 +53,21 @@ def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
         comando = "{} {} -- bash -c '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
     os.system(comando)
-
+    
 def inicia_servidores(m, n, bash=None, bash_params=None):
-    servidores = calcula_faixas(m, n)
-    salva_servidores(servidores)
+    servers = calcula_faixas(m, n)
+    salva_servidores(servers)
 
-    # for srv in range(n):
-    #     atual = servidores[srv]
-    #     ant   = servidores[srv - 1]
+    for srv in range(n):
+        atual = servers[srv]
+        ant   = servers[srv - 1]
 
-    #     try:
-    #         post = servidores[srv + 1]
-    #     except IndexError:
-    #         post = servidores[0]
+        try:
+            post = servers[srv + 1]
+        except IndexError:
+            post = servers[0]
 
-    #     inicia_servidor(atual, ant, post, bash, bash_params)
+        inicia_servidor(atual, ant, post, bash, bash_params)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -74,7 +75,7 @@ def main():
         help="m-bits para chave (M)", 
         type=int)
     parser.add_argument("servers", 
-        help="quantidade de servidores (N)", 
+        help="quantidade de servers (N)", 
         type=int)
     parser.add_argument("--bash", "-bsh",
         help="Bash/Terminal LINUX a ser usado", 
