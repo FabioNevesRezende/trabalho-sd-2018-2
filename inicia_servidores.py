@@ -4,7 +4,6 @@
 import argparse
 import os
 import yaml
-from itertools import cycle
 
 CONFIGS = yaml.load(open('configs.yml', 'r'))
 
@@ -58,16 +57,16 @@ def inicia_servidores(m, n, bash=None, bash_params=None):
     servidores = calcula_faixas(m, n)
     salva_servidores(servidores)
 
-    for srv in range(n):
-        atual = servidores[srv]
-        ant   = servidores[srv - 1]
+    # for srv in range(n):
+    #     atual = servidores[srv]
+    #     ant   = servidores[srv - 1]
 
-        try:
-            post = servidores[srv + 1]
-        except IndexError:
-            post = servidores[0]
+    #     try:
+    #         post = servidores[srv + 1]
+    #     except IndexError:
+    #         post = servidores[0]
 
-        inicia_servidor(atual, ant, post, bash, bash_params)
+    #     inicia_servidor(atual, ant, post, bash, bash_params)
 
 def main():
     parser = argparse.ArgumentParser()

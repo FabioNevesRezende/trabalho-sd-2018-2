@@ -23,6 +23,8 @@ import traceback
 import os
 import yaml
 import argparse
+import numpy as np
+
 
 reload(sys)
 sys.setdefaultencoding('utf8')
