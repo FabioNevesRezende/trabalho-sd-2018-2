@@ -4,10 +4,8 @@
 from comum import *
 import random
 import re
-import numpy as np
 
 import signal
-import sys
 
 manterRecebeRespostaCmdVivo = True
 manterConversaUsuario       = True
@@ -144,7 +142,7 @@ def main():
     global servidores
 
     try:
-        servidores = np.fromfile(SERVIDORES, sep='\n', dtype=int)
+        servidores = np.fromfile(SERVIDORES, sep='\n', dtype=np.int)
         signal.signal(signal.SIGINT, encerraCliente)
 
         le_parametros_banco()
