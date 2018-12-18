@@ -10,7 +10,8 @@ CONFIGS = yaml.load(open('configs.yml', 'r'))
 def salva_servidores(servers):
     caminho = CONFIGS['SERVIDORES']
     with open(caminho, "w") as file:
-        s = ['{}{}'.format(s,i) for i in xrange(3) for s in servers]
+        s = ['{}'.format(s) for s in servers]
+        # s = ['{}{}'.format(s,i) for i in xrange(3) for s in servers]
         file.write("\n".join(s))
 
 def salva_parametros(params):

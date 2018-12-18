@@ -6,8 +6,11 @@ from comum import *
 import datetime
 import io
 import shutil
-import re 
 import queue
+
+from banco_de_dadosproxy import BancoDeDados as IBD
+
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 online = True # status do servidor online/offline
 
@@ -15,16 +18,25 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
     def __init__(self, confServidor):
         self.configs = Configs()
 
-        self.filaComandos   = Fila() # fila F1 especificada nos requisitos
-        self.filaExecucao   = Fila() # fila F2 especificada nos requisitos
-        self.filaRoteamento = Fila()
+        self.posicoes = [0,1,2]
+        
+        self.subirReplicas()
 
-        self.comecaThreadFilaComandos()
-        self.comecaThreadFilaExecucao()
-        self.comecaThreadFilaRoteamento()
+        # self.filaComandos   = Fila() # fila F1 especificada nos requisitos
+        # self.filaExecucao   = Fila() # fila F2 especificada nos requisitos
+        # self.filaRoteamento = Fila()
+
+        # self.comecaThreadFilaComandos()
+        # self.comecaThreadFilaExecucao()
+        # self.comecaThreadFilaRoteamento()
 
         super()
 
+
+    def subirReplicas(self):
+        paths = ["{}:{}{}".format(IP_SOCKET, self.configs.id, i) for i in self.posicoes]
+        self.bd = IBD(','.join(paths))
+        
     def comecaThreadFilaComandos(self):
         trataFilaComandos = Thread(target=self.trataFilaComandos, args=())
         trataFilaComandos.daemon = True
@@ -42,12 +54,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         trataFilaRoteamento.daemon = True
         trataFilaRoteamento.name   = 'ThreadFilaRoteamento'
         trataFilaRoteamento.start()  # inicia thread que trata elementos da fila F3
-
-    def comecaThreadFilaLog(self):
-        trataFilaLogs = Thread(target=self.trataFilaLogs, args=())
-        trataFilaLogs.daemon = True
-        trataFilaLogs.name   = 'ThreadFilaLogs'
-        trataFilaLogs.start()  # inicia thread que trata elementos da fila de logs
 
     def CriaItem(self, request, context):
         return self.trataRequisicao(comandos['create'], request.chave, request.valor, context)
@@ -103,7 +109,6 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
 
         # TODO: corrigir roteamento
 
-
                 stub = self.cria_stub(servidor)
 
                 if comando == comandos['create']:
@@ -119,85 +124,30 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
 
         # Thread que pega os comandos e os loga
     
-    def trataFilaLogs(self):
-        '''
-            Trata a fila de logs para o log temporário
-        '''
-        while online:
-            while self.filaLogs.tamanho() > 0:
-                comando, chave, valor = self.filaLogs.desenfileira()
-                if comando != comandos['read']:
-                    self.escreveLog((comando, chave, valor))
-
     def cria_stub(self, servidor):
         endereco = '{}:{}{}'.format(IP_SOCKET, PREFIXO_PORTA, servidor)
         channel  = grpc.insecure_channel(endereco)
         return interface_pb2_grpc.ManipulaMapaStub(channel)
 
-    def temItem(self, chave):
-        '''
-            @param: chave: Chave do item
-            Verifica se o item existe no "banco"
-        '''
-        for elem in self.itensMapa:
-            if elem.chave == chave:
-                return self.itensMapa.index(elem)
-        return 
-
     # Cria um novo item e o adiciona à lista
     def criaItem(self, chave, valor):
-        if  self.temItem(chave) == None:
-            self.itensMapa.append(ItemMapa(chave, valor))
-            msg = 'Ok - Item criado.'
-            printa_positivo(msg)
-        else:
-            msg = 'NOk - Chave existente.'
-            printa_negativo(msg)
-
-        return msg
+        return IBD.criaItem(chave, valor)
 
     # Atualiza um item, caso exista
     def atualizaItem(self, chave, valor):
-        index = self.temItem(chave)
-        if not index==None:
-            self.itensMapa[index] = ItemMapa(chave,valor)
-            msg = 'Ok - Item atualizado.'
-            printa_positivo(msg)
-        else:
-            msg = 'NOk - Chave inexistente.'
-            printa_negativo(msg)
-
-        return msg
+        return IBD.atualizaItem(chave, valor)
 
     # Remove um item, caso exista
     def removeItem(self, chave):
-        index = self.temItem(chave)
-        if not index==None:
-            del self.itensMapa[index]
-            msg = 'Ok - Item removido.'
-            printa_positivo(msg)
-        else:
-            msg = 'NOk - Chave inexistente.'
-            printa_negativo(msg)
+        return IBD.removeItem(chave, valor)
         
-        return msg
-
     # Lê um item e o retorna a conexão, caso exista
     def leItem(self, chave):
-        index = self.temItem(chave)
-        if not index==None:
-            msg = str('Ok - Item: ' + self.itensMapa[index].serializa())
-            printa_positivo(msg)
-        else:
-            msg = 'NOk - Chave inexistente.'
-            printa_negativo(msg)
-        
-        return msg
+        return 
    
     def encerraServidor(self):
         global online
         printa_negativo('Encerrando aplicação =(')
-        self.tempLog.close()
         online = False
 
     def defineComandoAExecutar(self, comando, chave, valor):
@@ -220,7 +170,8 @@ def iniciaServidor(args):
 
     printa_neutro('Escutando no endereço: {}\n'.format(endereco))
 
-    executor = futures.ThreadPoolExecutor(max_workers=10, thread_name_prefix='Main')
+    executor = futures.ThreadPoolExecutor(max_workers=10, 
+                                          thread_name_prefix='Main')
     server   = grpc.server(executor)
 
     interface_pb2_grpc.add_ManipulaMapaServicer_to_server(GrpcInterface(configs), server)
@@ -258,5 +209,5 @@ if __name__ == '__main__':
     except Exception as e:
         printa_negativo('Erro ao rodar servidor: ')
         printa_negativo(str(e))
-        traceback.print_exc()
+        # traceback.print_exc()
         input()

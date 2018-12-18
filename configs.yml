@@ -5,5 +5,5 @@ PYTHON: /usr/bin/python3
 SERVIDORES: ./servidores.txt
 DB_PARAMS: ./db_params.yaml
 PREFIXO_PORTA: '199'
-DB_INTERFACE: concoord object -o banco_de_dados.BancoDeDados
-DB_PATH: export PYTHONPATH=$PYTHONPATH
+DB_MODEL: banco_de_dados.BancoDeDados
+CMD_REP: "concoord replica -o {} -a {} -p {}"

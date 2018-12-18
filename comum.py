@@ -31,6 +31,8 @@ IP_SOCKET     = configs['IP_SOCKET']
 PREFIXO_PORTA = configs['PREFIXO_PORTA']
 SERVIDORES    = configs['SERVIDORES']
 DB_PARAMS     = configs['DB_PARAMS']
+DB_MODEL     = configs['DB_MODEL']
+CMD_REP       = configs['CMD_REP']
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
