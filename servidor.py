@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-
-
 from concurrent import futures
 from comum import *
 import datetime
@@ -18,23 +16,42 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
     def __init__(self, confServidor):
         self.configs = Configs()
 
-        self.posicoes = [0,1,2]
-        
+        self.posicoes = 3
+        self.processes = []
         self.subirReplicas()
 
-        # self.filaComandos   = Fila() # fila F1 especificada nos requisitos
-        # self.filaExecucao   = Fila() # fila F2 especificada nos requisitos
-        # self.filaRoteamento = Fila()
+        self.filaComandos   = Fila() # fila F1 especificada nos requisitos
+        self.filaExecucao   = Fila() # fila F2 especificada nos requisitos
+        self.filaRoteamento = Fila()
 
-        # self.comecaThreadFilaComandos()
-        # self.comecaThreadFilaExecucao()
-        # self.comecaThreadFilaRoteamento()
+        self.comecaThreadFilaComandos()
+        self.comecaThreadFilaExecucao()
+        self.comecaThreadFilaRoteamento()
 
         super()
 
-
     def subirReplicas(self):
-        paths = ["{}:{}{}".format(IP_SOCKET, self.configs.id, i) for i in self.posicoes]
+        #recupera todos os endereços(ip:porta) de acordo com a quantidade de replicas
+        paths = ["{}:{}{}".format(IP_SOCKET, self.configs.id, i) for i in range(self.posicoes)]
+        #define a primeira replica
+        pathInicial = paths[0]
+        #criar a replica 1
+        print 'cria replica: {}'.format(pathInicial)
+        p = subprocess.Popen(['concoord', 'replica','-o', 'concoord.object.counter.Counter','-a', pathInicial.split(':')[0], '-p', pathInicial.split(':')[1]])
+        self.processes.append(p)
+        #TODO: As replicas não estão encontrando os objeto do banco
+        # for path in paths: 
+        #     if path != pathInicial:
+        #         ip = path.split(':')[0]
+        #         porta = path.split(':')[1]
+        #         #criar as n replicas
+        #         print 'cria replica: {}'.format(path)
+        #         p = subprocess.Popen(['concoord', 'replica', '-o', 'banco_de_dados.BancoDeDados', '-b', pathInicial,'-a', ip, '-p', porta])
+        #         self.processes.append(p)
+        self.instanciaIterfaceBanco([pathInicial])
+        
+
+    def instanciaIterfaceBanco(self, paths):
         self.bd = IBD(','.join(paths))
         
     def comecaThreadFilaComandos(self):
@@ -139,7 +156,7 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
 
     # Remove um item, caso exista
     def removeItem(self, chave):
-        return IBD.removeItem(chave, valor)
+        return IBD.removeItem(chave)
         
     # Lê um item e o retorna a conexão, caso exista
     def leItem(self, chave):
