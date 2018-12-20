@@ -1,9 +1,9 @@
 IP_SOCKET: '127.0.0.1' # endereço IP que o servidor vai rodar
-BASH: x-terminal-emulator
+BASH: xfce4-terminal
 BASH_PARAMS: --geometry 60x10 --title 'Servidor {}'
-PYTHON: /usr/bin/python3
+PYTHON: /usr/bin/python
 SERVIDORES: ./servidores.txt
 DB_PARAMS: ./db_params.yaml
-PREFIXO_PORTA: '199'
+PREFIXO_PORTA: '180'
 DB_MODEL: banco_de_dados.BancoDeDados
 CMD_REP: "concoord replica -o {} -a {} -p {}"

@@ -1,11 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import argparse
 import os
 import yaml
-
+import subprocess
 CONFIGS = yaml.load(open('configs.yml', 'r'))
+process = []
 
 def salva_servidores(servers):
     caminho = CONFIGS['SERVIDORES']
@@ -39,6 +38,8 @@ def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
     if bash == None:
         bash = CONFIGS['BASH']
     
+    # os.system('export PYTHONyy')
+
     if bash_params == None:
         bash_params = CONFIGS['BASH_PARAMS']
 
@@ -47,14 +48,27 @@ def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
     comando_python = '{} servidor.py {} {} {}'.format(CONFIGS['PYTHON'], atual, 
         ant, post)
 
-
     comando = "{} {} -e '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
     if bash.startswith('gnome'):
         comando = "{} {} -- bash -c '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
-    os.system(comando)
+    # print comando
     
+    # os.system('concoord replica -o banco_de_dados.BancoDeDados -a 127.0.0.1 -p'+ CONFIGS['PREFIXO_PORTA']+ atual )
+
+    my_env = os.environ.copy()
+    # my_env["PYTHONPATH"] =  "/:" + my_env["PATH"] 
+    p = subprocess.Popen(['concoord', 'replica','-o', 'banco_de_dados.BancoDeDados','-a', '127.0.0.1', '-p', CONFIGS['PREFIXO_PORTA']+ str(atual) + str(0)],env=dict(os.environ, PYTHONPATH=":/"))
+    process.append(p)
+    for i in range(1,3):
+        my_env = os.environ.copy()  
+        my_env["PYTHONPATH"] = "/:" + my_env["PATH"] 
+        p = subprocess.Popen(['concoord', 'replica','-o', 'banco_de_dados.BancoDeDados','-b', '127.0.0.1:'+CONFIGS['PREFIXO_PORTA'] + str(atual),'-a', '127.0.0.1', '-p', CONFIGS['PREFIXO_PORTA']+ str(atual + i)],env=dict(os.environ, PYTHONPATH=":/"))
+    process.append(p)
+    os.system('export PYTHONPATH=$PYTHONPATH')
+    os.system(comando)
+
 def inicia_servidores(m, n, bash=None, bash_params=None):
     servers = calcula_faixas(m, n)
     salva_servidores(servers)
@@ -90,6 +104,12 @@ def main():
     salva_parametros(vars(args))
     inicia_servidores(m=args.bits, n=args.servers, 
                       bash=args.bash, bash_params=args.bash_params)
+    x = raw_input()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except:
+        for p in process:
+            p.kill()
+    

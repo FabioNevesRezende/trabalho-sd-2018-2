@@ -7,7 +7,7 @@ import shutil
 import queue
 
 from banco_de_dadosproxy import BancoDeDados as IBD
-
+CONFIGS = yaml.load(open('configs.yml', 'r'))
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 online = True # status do servidor online/offline
@@ -31,14 +31,23 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         super()
 
     def subirReplicas(self):
-        #recupera todos os endereços(ip:porta) de acordo com a quantidade de replicas
-        paths = ["{}:{}{}".format(IP_SOCKET, self.configs.id, i) for i in range(self.posicoes)]
-        #define a primeira replica
-        pathInicial = paths[0]
-        #criar a replica 1
-        print 'cria replica: {}'.format(pathInicial)
-        p = subprocess.Popen(['concoord', 'replica','-o', 'concoord.object.counter.Counter','-a', pathInicial.split(':')[0], '-p', pathInicial.split(':')[1]])
-        self.processes.append(p)
+        # #recupera todos os endereços(ip:porta) de acordo com a quantidade de replicas
+        # paths = ["{}:{}{}".format(IP_SOCKET, self.configs.id, i) for i in range(self.posicoes)]
+        paths = ['127.0.0.1:' + CONFIGS['PREFIXO_PORTA']+str(self.configs.id + str(0))]
+        for i in range(1,3):
+            paths.append('127.0.0.1:' + CONFIGS['PREFIXO_PORTA']+str(self.configs.id+i))
+        print(','.join(paths))
+        self.bd = IBD(','.join(paths))
+        # #define a primeira replica
+        # pathInicial = paths[0]
+        # #criar a replica 1
+        # print 'cria replica: {}'.format(pathInicial)
+        # my_env = os.environ.copy()
+        # my_env["PYTHONPATH"] = "/:" + my_env["PYTHONPATH"]
+        # p = subprocess.Popen(['concoord', 'replica','-o', 'concoord.object.counter.Counter','-a', pathInicial.split (':')[0], '-p', pathInicial.split(':')[1]],env =my_env)
+
+
+        # self.processes.append(p)
         #TODO: As replicas não estão encontrando os objeto do banco
         # for path in paths: 
         #     if path != pathInicial:
@@ -48,11 +57,8 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         #         print 'cria replica: {}'.format(path)
         #         p = subprocess.Popen(['concoord', 'replica', '-o', 'banco_de_dados.BancoDeDados', '-b', pathInicial,'-a', ip, '-p', porta])
         #         self.processes.append(p)
-        self.instanciaIterfaceBanco([pathInicial])
-        
+        # self.instanciaIterfaceBanco([pathInicial])
 
-    def instanciaIterfaceBanco(self, paths):
-        self.bd = IBD(','.join(paths))
         
     def comecaThreadFilaComandos(self):
         trataFilaComandos = Thread(target=self.trataFilaComandos, args=())
@@ -225,6 +231,6 @@ if __name__ == '__main__':
         main()
     except Exception as e:
         printa_negativo('Erro ao rodar servidor: ')
-        printa_negativo(str(e))
+        # printa_negativo(str(e))
         # traceback.print_exc()
         input()
