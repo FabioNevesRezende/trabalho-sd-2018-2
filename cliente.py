@@ -4,10 +4,8 @@
 from comum import *
 import random
 import re
-import numpy as np
 
 import signal
-import sys
 
 manterRecebeRespostaCmdVivo = True
 manterConversaUsuario       = True
@@ -27,7 +25,7 @@ def printaMenuPrincipal():
 
 # pega o input do teclado
 def pegaInput():
-    inp = input()
+    inp = raw_input()
     sys.stdin.flush() # limpa o buffer stdin
     return inp
 
@@ -144,12 +142,12 @@ def main():
     global servidores
 
     try:
-        servidores = np.fromfile(SERVIDORES, sep='\n', dtype=int)
+        servidores = np.fromfile(SERVIDORES, sep='\n', dtype=np.int)
         signal.signal(signal.SIGINT, encerraCliente)
 
         le_parametros_banco()
         configura_cliente()
-    except FileNotFoundError:
+    except OSError:
         printa_negativo("Arquivo de servidores inexistente!")
         return
 

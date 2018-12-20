@@ -1,21 +1,21 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import argparse
 import os
 import yaml
-from itertools import cycle
-
+import subprocess
 CONFIGS = yaml.load(open('configs.yml', 'r'))
+process = []
 
-def salva_servidores(servidores):
+def salva_servidores(servers):
     caminho = CONFIGS['SERVIDORES']
-    with open(caminho, "+w") as file:
-        file.write("\n".join(map(str, servidores)))
+    with open(caminho, "w") as file:
+        s = ['{}'.format(s) for s in servers]
+        # s = ['{}{}'.format(s,i) for i in xrange(3) for s in servers]
+        file.write("\n".join(s))
 
 def salva_parametros(params):
     caminho = CONFIGS['DB_PARAMS']
-    yaml.dump(params, open(caminho, "+w"), default_flow_style=False)
+    yaml.dump(params, open(caminho, "w"), default_flow_style=False)
 
 def tem_resto(a, b):
     return True if a % b > 0 else False
@@ -38,6 +38,8 @@ def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
     if bash == None:
         bash = CONFIGS['BASH']
     
+    # os.system('export PYTHONyy')
+
     if bash_params == None:
         bash_params = CONFIGS['BASH_PARAMS']
 
@@ -46,26 +48,39 @@ def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
     comando_python = '{} servidor.py {} {} {}'.format(CONFIGS['PYTHON'], atual, 
         ant, post)
 
-
     comando = "{} {} -e '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
     if bash.startswith('gnome'):
         comando = "{} {} -- bash -c '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
+    # print comando
+    
+    # os.system('concoord replica -o banco_de_dados.BancoDeDados -a 127.0.0.1 -p'+ CONFIGS['PREFIXO_PORTA']+ atual )
+
+    my_env = os.environ.copy()
+    # my_env["PYTHONPATH"] =  "/:" + my_env["PATH"] 
+    p = subprocess.Popen(['concoord', 'replica','-o', 'banco_de_dados.BancoDeDados','-a', '127.0.0.1', '-p', CONFIGS['PREFIXO_PORTA']+ str(atual) + str(0)],env=dict(os.environ, PYTHONPATH=":/"))
+    process.append(p)
+    for i in range(1,3):
+        my_env = os.environ.copy()  
+        my_env["PYTHONPATH"] = "/:" + my_env["PATH"] 
+        p = subprocess.Popen(['concoord', 'replica','-o', 'banco_de_dados.BancoDeDados','-b', '127.0.0.1:'+CONFIGS['PREFIXO_PORTA'] + str(atual),'-a', '127.0.0.1', '-p', CONFIGS['PREFIXO_PORTA']+ str(atual + i)],env=dict(os.environ, PYTHONPATH=":/"))
+    process.append(p)
+    os.system('export PYTHONPATH=$PYTHONPATH')
     os.system(comando)
 
 def inicia_servidores(m, n, bash=None, bash_params=None):
-    servidores = calcula_faixas(m, n)
-    salva_servidores(servidores)
+    servers = calcula_faixas(m, n)
+    salva_servidores(servers)
 
     for srv in range(n):
-        atual = servidores[srv]
-        ant   = servidores[srv - 1]
+        atual = servers[srv]
+        ant   = servers[srv - 1]
 
         try:
-            post = servidores[srv + 1]
+            post = servers[srv + 1]
         except IndexError:
-            post = servidores[0]
+            post = servers[0]
 
         inicia_servidor(atual, ant, post, bash, bash_params)
 
@@ -75,7 +90,7 @@ def main():
         help="m-bits para chave (M)", 
         type=int)
     parser.add_argument("servers", 
-        help="quantidade de servidores (N)", 
+        help="quantidade de servers (N)", 
         type=int)
     parser.add_argument("--bash", "-bsh",
         help="Bash/Terminal LINUX a ser usado", 
@@ -89,6 +104,12 @@ def main():
     salva_parametros(vars(args))
     inicia_servidores(m=args.bits, n=args.servers, 
                       bash=args.bash, bash_params=args.bash_params)
+    x = raw_input()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except:
+        for p in process:
+            p.kill()
+    

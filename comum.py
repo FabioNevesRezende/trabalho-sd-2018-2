@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+from builtins import *
+
+# etc., as needed
+
+from future import standard_library
+standard_library.install_aliases()
+
 from threading import *
 from termcolor import colored
 import grpc
@@ -5,22 +18,22 @@ import interface_pb2
 import interface_pb2_grpc
 import sys
 import time
-import socket
-import traceback
 import os
 import yaml
 import argparse
+import numpy as np
+import subprocess
 
-configs               = yaml.load(open('configs.yml', 'r'))
-IP_SOCKET             = configs['IP_SOCKET']
-PORTA_SOCKET          = configs['PORTA_SOCKET']
-TAMANHO_MAXIMO_PACOTE = configs['TAMANHO_MAXIMO_PACOTE']
-DIR_LOG               = configs['DIR_LOG']
-DIR_SNAP              = configs['DIR_SNAP']
-SLEEP_TIME            = configs['SLEEP_TIME']
-PREFIXO_PORTA         = configs['PREFIXO_PORTA']
-SERVIDORES            = configs['SERVIDORES']
-DB_PARAMS             = configs['DB_PARAMS']
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+configs       = yaml.load(open('configs.yml', 'r'))
+IP_SOCKET     = configs['IP_SOCKET']
+PREFIXO_PORTA = configs['PREFIXO_PORTA']
+SERVIDORES    = configs['SERVIDORES']
+DB_PARAMS     = configs['DB_PARAMS']
+DB_MODEL     = configs['DB_MODEL']
+CMD_REP       = configs['CMD_REP']
 
 # printa uma mensagem colorida com a cor "cor"
 def printa_colorido(strng, cor):
@@ -48,15 +61,6 @@ class ItemMapa():
     def __init__(self, chave, valor):
         self.chave = chave
         self.valor = valor.encode()
-
-    def __setattr__(self, name, value):
-        # Verifica se a chave é um Inteiro
-        if name == 'chave' and not isinstance(value, int): 
-            raise TypeError('Chave do item deve ser um Inteiro')
-        # Verifica se o valor é uma string
-        if name == 'valor' and not isinstance(value, bytes):
-            raise TypeError('Valor do item deve ser um array de bytes')
-        super().__setattr__(name, value)
 
     # Serializa o item em uma string
     def serializa(self):
@@ -101,41 +105,6 @@ class Fila:
         if self.tamanho() > 0:
             return self.fila[0]
 
-# Manipula os arquivos como um fila
-class ManipulaArquivosLog():
-    def __init__(self, dirNome,index=0, separador='.'):
-        self.dirNome = dirNome
-        self.listaArquivos = Fila()
-        self.index = index
-        self.criaDirSeNaoExiste(self.dirNome)
-        self.recuperaArquivos()
-
-    def criaDirSeNaoExiste(self, dirNome):
-        print('Nome diretorio - {}'.format(dirNome))
-        if not os.path.exists(dirNome):
-            os.makedirs(dirNome)
-
-    # Instancia os arquivo na lista de arquivos e verifica o incremental para criação dos logs
-    def recuperaArquivos(self, separador='.'):
-        arquivos = os.listdir(self.dirNome)
-        arquivos.sort()
-        if len(arquivos) > 0:
-            self.index = int(arquivos[-1].split(separador)[1]) + 1
-            for name in arquivos:
-                self.listaArquivos.enfileira((open(self.dirNome + name, 'r+')))
-
-    #Remove o arquivo mais antigo da lista e da memoria
-    def removeArquivo(self):
-        caminhoRemovido = str(self.listaArquivos.desenfileira().name)
-        os.remove(caminhoRemovido)
-    
-    #Adiciona um arquivo em memoria e em arquivo
-    def adicionaArquivo(self, arquivo):
-        if self.listaArquivos.tamanho() >= 3:
-            self.removeArquivo()
-        self.listaArquivos.enfileira(arquivo)
-        self.index += 1
-        
 class Configs(object):
     class __Configs:
         def __init__(self, args=None):
@@ -146,8 +115,7 @@ class Configs(object):
             self.tabela()
         
         def __str__(self):
-            rep = {'id': self.id }
-            return str(rep)
+            return str({ 'id': self.id })
         
         def valida_posicao(self):
             self.sou_primeiro = True if self.anterior >= self.id else False
