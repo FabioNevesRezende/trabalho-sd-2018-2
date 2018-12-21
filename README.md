@@ -1,9 +1,7 @@
-#Importante
+# Importante
 Conforme conversado na última apresentação(**alunos Nicolas e Pedro**), as alterações foram realizadas permitindo que o servidores subam corretamente em conjuntos com suas respectivas replicas.
 
 Ao iniciar o cliente, por algum motivo não identificado os primeiros comandos demoram um pouco para serem respondidos, mas o cliente **funciona**.
-
-Todos os requisitos do professor estão nos comentários do arquivo common.py segundo slides
 
 # Instalação
 Para rodar a aplicação, é necessário ter as bibliotecas python: termcolor, pytest, pyyaml e gRPC
