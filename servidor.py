@@ -31,34 +31,19 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
         super()
 
     def subirReplicas(self):
+        print 'Código do servidor instanciado: {}'.format(self.configs.id)
         # #recupera todos os endereços(ip:porta) de acordo com a quantidade de replicas
-        # paths = ["{}:{}{}".format(IP_SOCKET, self.configs.id, i) for i in range(self.posicoes)]
         paths = ['127.0.0.1:' + CONFIGS['PREFIXO_PORTA']+str(self.configs.id + str(0))]
         for i in range(1,3):
-            paths.append('127.0.0.1:' + CONFIGS['PREFIXO_PORTA']+str(self.configs.id+i))
+            paths.append('127.0.0.1:' + CONFIGS['PREFIXO_PORTA']+str(self.configs.id + str(i)))
         print(','.join(paths))
-        self.bd = IBD(','.join(paths))
-        # #define a primeira replica
-        # pathInicial = paths[0]
-        # #criar a replica 1
-        # print 'cria replica: {}'.format(pathInicial)
-        # my_env = os.environ.copy()
-        # my_env["PYTHONPATH"] = "/:" + my_env["PYTHONPATH"]
-        # p = subprocess.Popen(['concoord', 'replica','-o', 'concoord.object.counter.Counter','-a', pathInicial.split (':')[0], '-p', pathInicial.split(':')[1]],env =my_env)
-
-
-        # self.processes.append(p)
-        #TODO: As replicas não estão encontrando os objeto do banco
-        # for path in paths: 
-        #     if path != pathInicial:
-        #         ip = path.split(':')[0]
-        #         porta = path.split(':')[1]
-        #         #criar as n replicas
-        #         print 'cria replica: {}'.format(path)
-        #         p = subprocess.Popen(['concoord', 'replica', '-o', 'banco_de_dados.BancoDeDados', '-b', pathInicial,'-a', ip, '-p', porta])
-        #         self.processes.append(p)
-        # self.instanciaIterfaceBanco([pathInicial])
-
+        try:
+            self.bd = IBD(','.join(paths))
+            print 'Deu certo'
+        except Exception as x:
+            print 'Deu pau ao instanciar o banco de dados'
+            print x
+        
         
     def comecaThreadFilaComandos(self):
         trataFilaComandos = Thread(target=self.trataFilaComandos, args=())
@@ -154,18 +139,19 @@ class GrpcInterface(interface_pb2_grpc.ManipulaMapaServicer):
 
     # Cria um novo item e o adiciona à lista
     def criaItem(self, chave, valor):
-        return IBD.criaItem(chave, valor)
+        return self.bd.criaItem(chave, valor)
 
     # Atualiza um item, caso exista
     def atualizaItem(self, chave, valor):
-        return IBD.atualizaItem(chave, valor)
+        return self.bd.atualizaItem(chave, valor)
 
     # Remove um item, caso exista
     def removeItem(self, chave):
-        return IBD.removeItem(chave)
+        return self.bd.removeItem(chave)
         
     # Lê um item e o retorna a conexão, caso exista
     def leItem(self, chave):
+        return self.bd.leItem(chave)
         return 
    
     def encerraServidor(self):

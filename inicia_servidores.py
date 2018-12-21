@@ -3,6 +3,8 @@ import argparse
 import os
 import yaml
 import subprocess
+import time
+
 CONFIGS = yaml.load(open('configs.yml', 'r'))
 process = []
 
@@ -10,7 +12,6 @@ def salva_servidores(servers):
     caminho = CONFIGS['SERVIDORES']
     with open(caminho, "w") as file:
         s = ['{}'.format(s) for s in servers]
-        # s = ['{}{}'.format(s,i) for i in xrange(3) for s in servers]
         file.write("\n".join(s))
 
 def salva_parametros(params):
@@ -37,8 +38,6 @@ def calcula_faixas(m, n):
 def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
     if bash == None:
         bash = CONFIGS['BASH']
-    
-    # os.system('export PYTHONyy')
 
     if bash_params == None:
         bash_params = CONFIGS['BASH_PARAMS']
@@ -48,26 +47,34 @@ def inicia_servidor(atual, ant, post, bash=None, bash_params=None):
     comando_python = '{} servidor.py {} {} {}'.format(CONFIGS['PYTHON'], atual, 
         ant, post)
 
+    print 'Código do servidor: {}'.format(atual)
+
     comando = "{} {} -e '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
     if bash.startswith('gnome'):
         comando = "{} {} -- bash -c '{}'  &".format(bash,  bash_params,comando_python) # DETACHED
 
-    # print comando
-    
-    # os.system('concoord replica -o banco_de_dados.BancoDeDados -a 127.0.0.1 -p'+ CONFIGS['PREFIXO_PORTA']+ atual )
-
     my_env = os.environ.copy()
-    # my_env["PYTHONPATH"] =  "/:" + my_env["PATH"] 
+    #inicializa bootstrap
     p = subprocess.Popen(['concoord', 'replica','-o', 'banco_de_dados.BancoDeDados','-a', '127.0.0.1', '-p', CONFIGS['PREFIXO_PORTA']+ str(atual) + str(0)],env=dict(os.environ, PYTHONPATH=":/"))
+
+    time.sleep(3)
     process.append(p)
+
+    #inicializa as replicas
     for i in range(1,3):
         my_env = os.environ.copy()  
         my_env["PYTHONPATH"] = "/:" + my_env["PATH"] 
-        p = subprocess.Popen(['concoord', 'replica','-o', 'banco_de_dados.BancoDeDados','-b', '127.0.0.1:'+CONFIGS['PREFIXO_PORTA'] + str(atual),'-a', '127.0.0.1', '-p', CONFIGS['PREFIXO_PORTA']+ str(atual + i)],env=dict(os.environ, PYTHONPATH=":/"))
+        p = subprocess.Popen(['concoord', 'replica','-o', 'banco_de_dados.BancoDeDados','-b', '127.0.0.1:'+CONFIGS['PREFIXO_PORTA'] + str(atual) + str(i),'-a', '127.0.0.1', '-p', CONFIGS['PREFIXO_PORTA']+ str(atual) + str(i)],env=dict(os.environ, PYTHONPATH=":/"))
+
     process.append(p)
     os.system('export PYTHONPATH=$PYTHONPATH')
+    print 'Código do servidor: Inicia servidor {}'.format(atual)
+
     os.system(comando)
+    time.sleep(5)
+
+    
 
 def inicia_servidores(m, n, bash=None, bash_params=None):
     servers = calcula_faixas(m, n)
